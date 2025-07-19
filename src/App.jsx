@@ -234,7 +234,7 @@ function App() {
           </div>
           
           {/* 클라우드 동기화 설정 */}
-          <div className="cloud-sync-mobile">
+          <div className="cloud-sync-mobile" style={{display: 'block', visibility: 'visible', opacity: 1}}>
             <CloudSyncSettings devices={devices} setDevices={setDevices} />
           </div>
           

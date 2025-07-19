@@ -5,12 +5,12 @@
   /* 사이드바 모바일 최적화 */
   .sidebar-mobile {
     width: 100vw !important;
-    max-width: 320px;
-    transform: translateX(-100%);
+    max-width: 320px !important;
+    transform: translateX(-100%) !important;
   }
   
   .sidebar-mobile.open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
   }
   
   /* 토글 버튼 모바일 위치 조정 */
@@ -40,12 +40,23 @@
   .cloud-sync-mobile {
     padding: 0.75rem !important;
     margin-bottom: 1rem !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  .cloud-sync-mobile > div {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   .cloud-sync-mobile button {
     padding: 0.5rem 0.75rem !important;
     font-size: 0.875rem !important;
     margin: 0.25rem !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
   /* 장비 목록 모바일 최적화 */
@@ -150,4 +161,26 @@
     min-width: 44px !important;
     min-height: 44px !important;
   }
+}
+
+/* 강제 표시 규칙 (모든 화면 크기에서) */
+.cloud-sync-mobile {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.cloud-sync-mobile > div {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* 사이드바 내부 요소 강제 표시 */
+.sidebar-mobile .cloud-sync-mobile {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: auto !important;
 } 
