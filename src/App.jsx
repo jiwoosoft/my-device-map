@@ -219,7 +219,7 @@ function App() {
           <div className="mb-4 p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md">
             <div className="text-center">
               <div className="text-white text-xs font-semibold mb-1">개발자</div>
-              <div className="text-white text-sm font-bold">CHOI HYUN MIN</div>
+              <div className="text-white text-xs font-bold leading-tight">CHOI HYUN MIN</div>
             </div>
           </div>
           
