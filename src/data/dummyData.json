@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "name": "장비 A",
+    "latitude": 37.5665,
+    "longitude": 126.9780,
+    "installed_at": "2023-01-15",
+    "note": "본사 앞"
+  },
+  {
+    "id": "2",
+    "name": "장비 B",
+    "latitude": 37.5512,
+    "longitude": 126.9882,
+    "installed_at": "2023-02-20",
+    "note": "남산타워 근처"
+  }
+] 
