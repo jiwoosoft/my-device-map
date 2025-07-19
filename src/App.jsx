@@ -207,10 +207,10 @@ function App() {
         {/* 사이드바 토글 버튼 */}
         <button 
           onClick={toggleSidebar}
-          className={`absolute top-8 z-[1001] p-2 bg-white dark:bg-gray-800 rounded-md shadow-lg transition-all duration-300 ease-in-out ${isSidebarOpen ? 'left-40' : 'left-4'}`}
+          className={`absolute top-8 z-[1001] p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out ${isSidebarOpen ? 'left-40' : 'left-4'}`}
           aria-label="Toggle sidebar"
         >
-          {isSidebarOpen ? '<' : '>'}
+          {isSidebarOpen ? '◀' : '▶'}
         </button>
 
         {/* 사이드바 (너비 고정 및 클래스 변경) */}
