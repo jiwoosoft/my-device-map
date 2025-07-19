@@ -33,7 +33,7 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 flex justify-center items-center z-[1000] pointer-events-none">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-md pointer-events-auto">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-md pointer-events-auto modal-mobile">
         <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
           {isEditing ? '장비 정보 수정' : '새 장비 등록'}
         </h2>
@@ -53,7 +53,7 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 modal-input-mobile"
               required
             />
           </div>
@@ -65,7 +65,7 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
               id="installedAt"
               value={installedAt}
               onChange={(e) => setInstalledAt(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 modal-input-mobile"
               required
             />
           </div>
@@ -77,7 +77,7 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows="3"
-              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 modal-input-mobile"
             ></textarea>
           </div>
           <div className="flex justify-end space-x-4">

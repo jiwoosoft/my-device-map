@@ -208,16 +208,16 @@ function App() {
         {/* 사이드바 토글 버튼 */}
         <button 
           onClick={toggleSidebar}
-          className={`absolute top-8 z-[1001] p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out ${isSidebarOpen ? 'left-40' : 'left-4'}`}
+          className={`absolute top-8 z-[1001] p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out toggle-button-mobile ${isSidebarOpen ? 'left-40' : 'left-4'}`}
           aria-label="Toggle sidebar"
         >
           {isSidebarOpen ? '◀' : '▶'}
         </button>
 
-        {/* 사이드바 (너비 고정 및 클래스 변경) */}
-        <div className={`absolute top-0 left-0 h-full z-[1000] w-40 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* 사이드바 (모바일 반응형 적용) */}
+        <div className={`absolute top-0 left-0 h-full z-[1000] w-40 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out sidebar-mobile ${isSidebarOpen ? 'translate-x-0 open' : '-translate-x-full'}`}>
           {/* 개발자 정보 카드 */}
-          <div className="mb-4 p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md">
+          <div className="mb-4 p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md developer-card-mobile">
             <div className="text-center">
               <div className="text-white text-xs font-semibold mb-1">개발자</div>
               <div className="text-white text-xs font-bold leading-tight">CHOI HYUN MIN</div>
@@ -234,19 +234,23 @@ function App() {
           </div>
           
           {/* 클라우드 동기화 설정 */}
-          <CloudSyncSettings devices={devices} setDevices={setDevices} />
+          <div className="cloud-sync-mobile">
+            <CloudSyncSettings devices={devices} setDevices={setDevices} />
+          </div>
           
-          <DeviceList
-            devices={devices}
-            selectedDevice={selectedDevice}
-            onDeviceSelect={handleDeviceSelect}
-            onDeleteDevice={handleDeleteDevice}
-            onEditDevice={handleEditDevice}
-          />
+          <div className="device-list-mobile">
+            <DeviceList
+              devices={devices}
+              selectedDevice={selectedDevice}
+              onDeviceSelect={handleDeviceSelect}
+              onDeleteDevice={handleDeleteDevice}
+              onEditDevice={handleEditDevice}
+            />
+          </div>
         </div>
 
-        {/* 지도 영역 (이제 항상 전체 너비를 차지) */}
-        <div className="w-full h-full">
+        {/* 지도 영역 (모바일 반응형 적용) */}
+        <div className="w-full h-full map-container-mobile">
           <MapContainer
             ref={mapRef} // ref prop을 사용하여 인스턴스 할당
             center={initialPosition}

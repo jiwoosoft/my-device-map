@@ -18,7 +18,7 @@ const DeviceList = ({ devices, selectedDevice, onDeviceSelect, onDeleteDevice, o
         return (
           <li
             key={device.id}
-            className={`p-3 mb-2 rounded-md cursor-pointer transition-colors
+            className={`p-3 mb-2 rounded-md cursor-pointer transition-colors device-item-mobile
               ${isSelected 
                 ? 'bg-blue-200 dark:bg-blue-800' 
                 : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
