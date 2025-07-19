@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://prtjnukbuubeckxxgnuk.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydGpudWtidXViZWNreHhnbnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MjIxMzIsImV4cCI6MjA2ODQ5ODEzMn0.mPFuIdEIKqjSnggh-D3AebgG5mE5w9PeIzqQgtIngajo';
 
+console.log('🔧 Supabase 설정 확인:');
+console.log('  URL:', supabaseUrl);
+console.log('  Key 길이:', supabaseAnonKey ? supabaseAnonKey.length : 0);
+
 // Supabase 클라이언트 생성
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -33,6 +37,20 @@ export const saveDevicesToCloud = async (devices) => {
     if (!supabase) {
       console.log('Supabase 클라이언트가 초기화되지 않았습니다.');
       return { success: false, error: 'Supabase client not initialized' };
+    }
+
+    // 먼저 테이블 존재 여부 확인
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('devices')
+      .select('count')
+      .limit(1);
+
+    if (tableError) {
+      console.error('테이블 접근 오류:', tableError);
+      return { 
+        success: false, 
+        error: `테이블 접근 실패: ${tableError.message}. Supabase 대시보드에서 'devices' 테이블을 생성해주세요.` 
+      };
     }
 
     // 기존 데이터 삭제 후 새 데이터 삽입
