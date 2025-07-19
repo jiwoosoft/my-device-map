@@ -45,6 +45,7 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDevicePosition, setNewDevicePosition] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null); // 수정할 장비 상태
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // 사이드바 상태 추가
   const initialPosition = [35.63, 126.88]; // 초기 지도 중심: 정읍 북면 농공단지 근처
 
   useEffect(() => {
@@ -57,6 +58,10 @@ function App() {
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   const handleDeviceSelect = (device) => {
@@ -124,13 +129,24 @@ function App() {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        {/* 사이드바 */}
-        <div className="w-1/3 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg">
-          <div className="flex justify-between items-center mb-4">
+      {/* 부모 컨테이너에 relative 속성 추가 */}
+      <div className="relative flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden">
+        {/* 사이드바 토글 버튼 */}
+        <button 
+          onClick={toggleSidebar}
+          className={`absolute top-24 z-[1001] p-2 bg-white dark:bg-gray-800 rounded-md shadow-lg transition-all duration-300 ease-in-out ${isSidebarOpen ? 'left-40' : 'left-4'}`}
+          aria-label="Toggle sidebar"
+        >
+          {isSidebarOpen ? '<' : '>'}
+        </button>
+
+        {/* 사이드바 (너비 고정 및 클래스 변경) */}
+        <div className={`absolute top-0 left-0 h-full z-[1000] w-40 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          {/* 제목의 상단 마진 제거, 중앙 정렬을 위해 부모에 relative 추가 */}
+          <div className="relative flex justify-center items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">장비 목록</h2>
-            {/* 테마 토글 버튼 */}
-            <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+            {/* 테마 토글 버튼 (오른쪽으로 절대 위치) */}
+            <button onClick={toggleTheme} className="absolute right-0 p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
           </div>
@@ -143,8 +159,8 @@ function App() {
           />
         </div>
 
-        {/* 지도 영역 */}
-        <div className="w-2/3">
+        {/* 지도 영역 (이제 항상 전체 너비를 차지) */}
+        <div className="w-full h-full">
           <MapContainer
             center={initialPosition}
             zoom={13}
