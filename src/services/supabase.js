@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 // 환경 변수에서 Supabase 설정을 가져옵니다
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Supabase 클라이언트 생성
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase 클라이언트 생성 (환경 변수가 없으면 더미 클라이언트)
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // 클라우드 동기화가 활성화되어 있는지 확인하는 함수
 export const isCloudSyncEnabled = () => {
@@ -20,6 +22,11 @@ export const saveDevicesToCloud = async (devices) => {
     if (!isCloudSyncEnabled()) {
       console.log('클라우드 동기화가 비활성화되어 있습니다.');
       return { success: false, error: 'Cloud sync disabled' };
+    }
+
+    if (!supabase) {
+      console.log('Supabase 클라이언트가 초기화되지 않았습니다.');
+      return { success: false, error: 'Supabase client not initialized' };
     }
 
     // 기존 데이터 삭제 후 새 데이터 삽입
@@ -57,6 +64,11 @@ export const loadDevicesFromCloud = async () => {
     if (!isCloudSyncEnabled()) {
       console.log('클라우드 동기화가 비활성화되어 있습니다.');
       return { success: false, data: [], error: 'Cloud sync disabled' };
+    }
+
+    if (!supabase) {
+      console.log('Supabase 클라이언트가 초기화되지 않았습니다.');
+      return { success: false, data: [], error: 'Supabase client not initialized' };
     }
 
     const { data, error } = await supabase
