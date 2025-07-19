@@ -8,6 +8,7 @@ import DeviceList from './components/DeviceList';
 import dummyData from './data/dummyData.json';
 import useLocalStorage from './hooks/useLocalStorage';
 import DeviceFormModal from './components/DeviceFormModal';
+import CloudSyncSettings from './components/CloudSyncSettings';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -231,6 +232,10 @@ function App() {
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
           </div>
+          
+          {/* 클라우드 동기화 설정 */}
+          <CloudSyncSettings devices={devices} setDevices={setDevices} />
+          
           <DeviceList
             devices={devices}
             selectedDevice={selectedDevice}
