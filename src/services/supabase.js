@@ -13,7 +13,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 클라우드 동기화가 활성화되어 있는지 확인하는 함수
 export const isCloudSyncEnabled = () => {
-  const cloudSyncEnabled = import.meta.env.VITE_ENABLE_CLOUD_SYNC === 'true' || true; // 기본값을 true로 설정
+  // 임시로 클라우드 동기화 비활성화 (오류 해결 후 다시 활성화)
+  const cloudSyncEnabled = false; // import.meta.env.VITE_ENABLE_CLOUD_SYNC === 'true' || true;
   const hasUrl = !!supabaseUrl;
   const hasKey = !!supabaseAnonKey;
   
@@ -22,6 +23,7 @@ export const isCloudSyncEnabled = () => {
   console.log('  supabaseUrl 존재:', hasUrl);
   console.log('  supabaseAnonKey 존재:', hasKey);
   console.log('  최종 결과:', cloudSyncEnabled && hasUrl && hasKey);
+  console.log('  ⚠️ 임시로 클라우드 동기화가 비활성화되었습니다.');
   
   return cloudSyncEnabled && hasUrl && hasKey;
 };
