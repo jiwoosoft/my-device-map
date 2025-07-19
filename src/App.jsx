@@ -45,7 +45,7 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDevicePosition, setNewDevicePosition] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null); // 수정할 장비 상태
-  const initialPosition = [37.5665, 126.9780]; // 초기 지도 중심: 서울
+  const initialPosition = [35.63, 126.88]; // 초기 지도 중심: 정읍 북면 농공단지 근처
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -126,28 +126,15 @@ function App() {
     <>
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         {/* Left Sidebar */}
-        <div className="w-1/3 bg-white dark:bg-gray-800 p-4 overflow-y-auto">
+        <div className="w-1/3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold">장비 목록</h1>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none"
-              aria-label="Toggle dark mode"
-            >
-              {theme === 'light' ? (
-                // Moon Icon
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              ) : (
-                // Sun Icon
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              )}
+            {/* Theme Toggle Button */}
+            <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+              {theme === 'light' ? '🌙' : '☀️'}
             </button>
           </div>
-          <DeviceList 
+          <DeviceList
             devices={devices}
             selectedDevice={selectedDevice} // 선택된 장비 정보 전달
             onDeviceSelect={handleDeviceSelect}
