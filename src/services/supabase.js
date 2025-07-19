@@ -1,19 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 
 // 환경 변수에서 Supabase 설정을 가져옵니다
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://prtjnukbuubeckxxgnuk.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydGpudWtidXViZWNreHhnbnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MjIxMzIsImV4cCI6MjA2ODQ5ODEzMn0.mPFuIdEIKqjSnggh-D3AebgG5mE5w9PeIzqQgtIngajo';
 
-// Supabase 클라이언트 생성 (환경 변수가 없으면 더미 클라이언트)
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Supabase 클라이언트 생성
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 클라우드 동기화가 활성화되어 있는지 확인하는 함수
 export const isCloudSyncEnabled = () => {
-  return import.meta.env.VITE_ENABLE_CLOUD_SYNC === 'true' && 
-         supabaseUrl && 
-         supabaseAnonKey;
+  const cloudSyncEnabled = import.meta.env.VITE_ENABLE_CLOUD_SYNC === 'true' || true; // 기본값을 true로 설정
+  const hasUrl = !!supabaseUrl;
+  const hasKey = !!supabaseAnonKey;
+  
+  console.log('🔍 클라우드 동기화 상태 확인:');
+  console.log('  VITE_ENABLE_CLOUD_SYNC:', import.meta.env.VITE_ENABLE_CLOUD_SYNC);
+  console.log('  supabaseUrl 존재:', hasUrl);
+  console.log('  supabaseAnonKey 존재:', hasKey);
+  console.log('  최종 결과:', cloudSyncEnabled && hasUrl && hasKey);
+  
+  return cloudSyncEnabled && hasUrl && hasKey;
 };
 
 // 장비 데이터를 Supabase에 저장하는 함수
