@@ -215,6 +215,14 @@ function App() {
 
         {/* 사이드바 (너비 고정 및 클래스 변경) */}
         <div className={`absolute top-0 left-0 h-full z-[1000] w-40 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          {/* 개발자 정보 카드 */}
+          <div className="mb-4 p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md">
+            <div className="text-center">
+              <div className="text-white text-xs font-semibold mb-1">개발자</div>
+              <div className="text-white text-sm font-bold">CHOI HYUN MIN</div>
+            </div>
+          </div>
+          
           {/* 제목의 상단 마진 제거, 중앙 정렬을 위해 부모에 relative 추가 */}
           <div className="relative flex justify-start items-center mb-4">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white">장비목록</h2>
