@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 환경 변수에서 Supabase 설정을 가져옵니다
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://prtjnukbuubeckxxgnuk.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydGpudWtidXViZWNreHhnbnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MjIxMzIsImV4cCI6MjA2ODQ5ODEzMn0.mPFuIdEIKqjSnggh-D3AebgG5mE5w9PeIzqQgtIngajo';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydGpudWtidXViZWNreHhnbnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzI5NzQsImV4cCI6MjA1MDU0ODk3NH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
 
 console.log('🔧 Supabase 설정 확인:');
 console.log('  URL:', supabaseUrl);
@@ -48,9 +48,26 @@ export const saveDevicesToCloud = async (devices) => {
 
     if (tableError) {
       console.error('테이블 접근 오류:', tableError);
+      
+      // API 키 오류인지 확인
+      if (tableError.message && tableError.message.includes('Invalid API key')) {
+        return { 
+          success: false, 
+          error: `API 키 오류: ${tableError.message}. Supabase 대시보드에서 올바른 API 키를 확인해주세요.` 
+        };
+      }
+      
+      // 테이블이 없는 경우
+      if (tableError.code === 'PGRST116') {
+        return { 
+          success: false, 
+          error: `테이블이 존재하지 않습니다. Supabase 대시보드에서 'devices' 테이블을 생성해주세요.` 
+        };
+      }
+      
       return { 
         success: false, 
-        error: `테이블 접근 실패: ${tableError.message}. Supabase 대시보드에서 'devices' 테이블을 생성해주세요.` 
+        error: `테이블 접근 실패: ${tableError.message}` 
       };
     }
 
