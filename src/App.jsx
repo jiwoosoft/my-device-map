@@ -125,27 +125,31 @@ function App() {
   return (
     <>
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        {/* Left Sidebar */}
-        <div className="w-1/3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-4 overflow-y-auto">
+        {/* 사이드바 */}
+        <div className="w-1/3 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">장비 목록</h1>
-            {/* Theme Toggle Button */}
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">장비 목록</h2>
+            {/* 테마 토글 버튼 */}
             <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
           </div>
           <DeviceList
             devices={devices}
-            selectedDevice={selectedDevice} // 선택된 장비 정보 전달
+            selectedDevice={selectedDevice}
             onDeviceSelect={handleDeviceSelect}
             onDeleteDevice={handleDeleteDevice}
             onEditDevice={handleEditDevice}
           />
         </div>
 
-        {/* Map Area */}
+        {/* 지도 영역 */}
         <div className="w-2/3">
-          <MapContainer center={initialPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <MapContainer
+            center={initialPosition}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+          >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -189,7 +193,7 @@ function App() {
         </div>
       </div>
 
-      {/* Modal is now rendered outside the main layout container */}
+      {/* 모달은 메인 레이아웃 컨테이너 외부에 렌더링 */}
       {isModalOpen && (
         <DeviceFormModal
           device={editingDevice}
