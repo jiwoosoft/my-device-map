@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 import L from 'leaflet';
@@ -55,6 +55,8 @@ function App() {
   const [theme, setTheme] = useLocalStorage('theme', 'dark');
   // 맵 인스턴스를 저장하기 위한 ref
   const mapRef = useRef();
+  // 모든 마커의 참조를 저장하기 위한 ref
+  const markerRefs = useRef({});
 
   // --- 추가된 상태 변수들 ---
   // 선택된 장비 상태
@@ -64,6 +66,8 @@ function App() {
   // 초기 지도 위치
   const initialPosition = [35.63, 126.88];
   // --- 여기까지 ---
+  // 수정 중인 마커의 임시 위치를 저장하는 상태
+  const [updatedPosition, setUpdatedPosition] = useState(null);
 
   // 테마 변경 시 HTML 루트 요소에 'dark' 클래스를 토글합니다.
   useEffect(() => {
@@ -73,6 +77,39 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  // 수정 모드가 변경될 때마다 마커의 드래그 상태를 직접 제어
+  useEffect(() => {
+    // 모든 마커를 일단 드래그 불가능 상태로 리셋
+    Object.values(markerRefs.current).forEach(marker => {
+      if (marker) {
+        marker.dragging.disable(); // 올바른 함수 이름으로 수정
+      }
+    });
+
+    // 수정 모드인 장비가 있다면, 해당 마커만 드래그 가능하게 만듦
+    if (editingDevice) {
+      const markerRef = markerRefs.current[editingDevice.id];
+      if (markerRef) {
+        markerRef.dragging.enable(); // 올바른 함수 이름으로 수정
+      }
+    }
+  }, [editingDevice]);
+
+  // 지도 로드 후 왼쪽 줌 컨트롤 제거
+  useEffect(() => {
+    if (mapRef.current) {
+      const timer = setTimeout(() => {
+        // 왼쪽 상단의 기본 줌 컨트롤을 찾아서 제거
+        const defaultZoomControl = document.querySelector('.leaflet-control-zoom:not(.leaflet-control-zoom-topright)');
+        if (defaultZoomControl) {
+          defaultZoomControl.remove();
+        }
+      }, 1000); // 지도가 완전히 로드될 때까지 기다림
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     // mapRef.current 에 지도 인스턴스가 할당되면 invalidateSize 실행
@@ -105,13 +142,20 @@ function App() {
   const handleEditDevice = (device) => {
     setEditingDevice(device);
     setIsModalOpen(true);
+    setUpdatedPosition(null); // 수정 시작 시 임시 위치 초기화
   };
 
   const handleSaveDevice = (deviceData) => {
     if (editingDevice) {
       // 수정 로직
+      const finalPosition = updatedPosition 
+        ? { latitude: updatedPosition.lat, longitude: updatedPosition.lng }
+        : { latitude: editingDevice.latitude, longitude: editingDevice.longitude };
+
       setDevices(devices.map(d => 
-        d.id === editingDevice.id ? { ...d, ...deviceData } : d
+        d.id === editingDevice.id 
+          ? { ...d, ...deviceData, ...finalPosition } 
+          : d
       ));
       toast.success("장비 정보가 성공적으로 수정되었습니다.");
     } else {
@@ -139,6 +183,7 @@ function App() {
     setIsModalOpen(false);
     setEditingDevice(null);
     setNewDevicePosition(null);
+    setUpdatedPosition(null); // 모달 닫을 때 임시 위치 초기화
   }
 
   const handleNavigationClick = (url) => {
@@ -171,8 +216,8 @@ function App() {
         {/* 사이드바 (너비 고정 및 클래스 변경) */}
         <div className={`absolute top-0 left-0 h-full z-[1000] w-40 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           {/* 제목의 상단 마진 제거, 중앙 정렬을 위해 부모에 relative 추가 */}
-          <div className="relative flex justify-center items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">장비 목록</h2>
+          <div className="relative flex justify-start items-center mb-4">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-white">장비목록</h2>
             {/* 테마 토글 버튼 (오른쪽으로 절대 위치) */}
             <button onClick={toggleTheme} className="absolute right-0 p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               {theme === 'light' ? '🌙' : '☀️'}
@@ -194,44 +239,66 @@ function App() {
             center={initialPosition}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
+            zoomControl={false} // 기본 줌 컨트롤 비활성화
           >
+            <ZoomControl position="topright" /> {/* 줌 컨트롤을 우측 상단에 추가 */}
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            {devices.map(device => (
-              <Marker key={device.id} position={[device.latitude, device.longitude]}>
-                <Popup>
-                  <div className="space-y-2">
-                    <p className="font-bold text-lg">{device.name}</p>
-                    <p><b>설치일:</b> {device.installed_at}</p>
-                    {device.note && <p><b>비고:</b> {device.note}</p>}
-                    <hr className="my-2"/>
-                    <p className="font-semibold">길안내</p>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleNavigationClick(`nmap://route/car?dlat=${device.latitude}&dlng=${device.longitude}&dname=${encodeURIComponent(device.name)}`)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        네이버
-                      </button>
-                      <button
-                        onClick={() => handleNavigationClick(`kakaomap://route?ep=${device.latitude},${device.longitude}&by=CAR`)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        카카오
-                      </button>
-                      <button
-                        onClick={() => handleNavigationClick(`tmap://route?goalname=${encodeURIComponent(device.name)}&goalx=${device.longitude}&goaly=${device.latitude}`)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        TMAP
-                      </button>
+            {devices.map(device => {
+              const isEditing = editingDevice && editingDevice.id === device.id;
+              // 수정 중일 때 updatedPosition 값이 있으면 그 위치를, 아니면 원래 위치를 사용
+              const currentMarkerPosition = isEditing && updatedPosition 
+                ? [updatedPosition.lat, updatedPosition.lng] 
+                : [device.latitude, device.longitude];
+
+              return (
+                <Marker 
+                  ref={el => (markerRefs.current[device.id] = el)}
+                  key={device.id} // key를 원래대로 되돌림
+                  position={currentMarkerPosition}
+                  // draggable prop은 useEffect에서 직접 제어하므로 제거
+                  eventHandlers={{
+                    dragend: (e) => {
+                      if (editingDevice && editingDevice.id === device.id) {
+                        setUpdatedPosition(e.target.getLatLng());
+                      }
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="space-y-2">
+                      <p className="font-bold text-lg">{device.name}</p>
+                      <p><b>설치일:</b> {device.installed_at}</p>
+                      {device.note && <p><b>비고:</b> {device.note}</p>}
+                      <hr className="my-2"/>
+                      <p className="font-semibold">길안내</p>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleNavigationClick(`nmap://route/car?dlat=${device.latitude}&dlng=${device.longitude}&dname=${encodeURIComponent(device.name)}`)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          네이버
+                        </button>
+                        <button
+                          onClick={() => handleNavigationClick(`kakaomap://route?ep=${device.latitude},${device.longitude}&by=CAR`)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          카카오
+                        </button>
+                        <button
+                          onClick={() => handleNavigationClick(`tmap://route?goalname=${encodeURIComponent(device.name)}&goalx=${device.longitude}&goaly=${device.latitude}`)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          TMAP
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+                  </Popup>
+                </Marker>
+              )
+            })}
             <MapFlyTo position={selectedPosition} />
             <MapClickHandler />
           </MapContainer>
