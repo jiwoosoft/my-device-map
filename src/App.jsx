@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -39,15 +39,33 @@ function MapFlyTo({ position }) {
 }
 
 function App() {
-  const [devices, setDevices] = useLocalStorage('devices', dummyData);
-  const [theme, setTheme] = useLocalStorage('theme', 'light');
-  const [selectedDevice, setSelectedDevice] = useState(null);
+  // 로컬 스토리지를 사용하여 장비 목록을 관리합니다.
+  const [devices, setDevices] = useLocalStorage('devices', []);
+  // 현재 위치 상태를 관리합니다.
+  const [currentPosition, setCurrentPosition] = useState(null);
+  // 모달 창의 표시 여부를 관리합니다.
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newDevicePosition, setNewDevicePosition] = useState(null);
-  const [editingDevice, setEditingDevice] = useState(null); // 수정할 장비 상태
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // 사이드바 상태 추가
-  const initialPosition = [35.63, 126.88]; // 초기 지도 중심: 정읍 북면 농공단지 근처
+  // 수정할 장비의 상태를 관리합니다.
+  const [editingDevice, setEditingDevice] = useState(null);
+  // 사이드바의 열림/닫힘 상태를 관리합니다. (모바일 뷰)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // 로딩 상태를 관리합니다.
+  const [loading, setLoading] = useState(true);
+  // 테마 상태를 관리합니다. (다크 모드/라이트 모드)
+  const [theme, setTheme] = useLocalStorage('theme', 'dark');
+  // 맵 인스턴스를 저장하기 위한 ref
+  const mapRef = useRef();
 
+  // --- 추가된 상태 변수들 ---
+  // 선택된 장비 상태
+  const [selectedDevice, setSelectedDevice] = useState(null);
+  // 새로운 장비 위치 상태
+  const [newDevicePosition, setNewDevicePosition] = useState(null);
+  // 초기 지도 위치
+  const initialPosition = [35.63, 126.88];
+  // --- 여기까지 ---
+
+  // 테마 변경 시 HTML 루트 요소에 'dark' 클래스를 토글합니다.
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -55,6 +73,16 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  useEffect(() => {
+    // mapRef.current 에 지도 인스턴스가 할당되면 invalidateSize 실행
+    if (mapRef.current) {
+      const timer = setTimeout(() => {
+        mapRef.current.invalidateSize();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [isSidebarOpen]); // mapRef는 의존성 배열에서 제외
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -162,6 +190,7 @@ function App() {
         {/* 지도 영역 (이제 항상 전체 너비를 차지) */}
         <div className="w-full h-full">
           <MapContainer
+            ref={mapRef} // ref prop을 사용하여 인스턴스 할당
             center={initialPosition}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
