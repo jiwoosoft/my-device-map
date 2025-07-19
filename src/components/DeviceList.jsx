@@ -9,7 +9,7 @@ const DeviceList = ({ devices, selectedDevice, onDeviceSelect, onDeleteDevice, o
   const handleEditClick = (e, device) => {
     e.stopPropagation();
     onEditDevice(device);
-  }
+  };
 
   return (
     <ul>
@@ -26,8 +26,10 @@ const DeviceList = ({ devices, selectedDevice, onDeviceSelect, onDeleteDevice, o
             }
             onClick={() => onDeviceSelect(device)}
           >
-            {/* 이름과 아이콘을 수직으로 배치하기 위한 구조 변경 */}
-            <div className="w-full">
+            {/* ====================================================== */}
+            {/* 수정된 부분: flex-col로 수직 구조 명시 */}
+            {/* ====================================================== */}
+            <div className="flex flex-col w-full">
               {/* 장비 이름 (길면 ...으로 표시) */}
               <h3 className="font-bold truncate">{device.name}</h3>
               
@@ -62,4 +64,4 @@ const DeviceList = ({ devices, selectedDevice, onDeviceSelect, onDeleteDevice, o
   );
 };
 
-export default DeviceList; 
+export default DeviceList;
