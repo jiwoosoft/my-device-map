@@ -12,6 +12,12 @@ import CloudSyncSettings from './components/CloudSyncSettings';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// 새로운 지도 컴포넌트들
+import MapTypeSelector from './components/MapTypeSelector';
+import AddressSearch from './components/AddressSearch';
+import KakaoMap from './components/KakaoMap';
+import NaverMap from './components/NaverMap';
+
 // Leaflet 아이콘 경로 문제 해결
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -69,6 +75,10 @@ function App() {
   // --- 여기까지 ---
   // 수정 중인 마커의 임시 위치를 저장하는 상태
   const [updatedPosition, setUpdatedPosition] = useState(null);
+
+  // 새로운 지도 관련 상태
+  const [mapType, setMapType] = useLocalStorage('mapType', 'leaflet'); // 지도 타입 (leaflet, kakao, naver)
+  const [searchLocation, setSearchLocation] = useState(null); // 주소 검색으로 선택된 위치
 
   // 테마 변경 시 HTML 루트 요소에 'dark' 클래스를 토글합니다.
   useEffect(() => {
@@ -191,6 +201,42 @@ function App() {
     window.open(url, '_blank');
   };
 
+  // 지도 타입 변경 핸들러
+  const handleMapTypeChange = (newMapType) => {
+    setMapType(newMapType);
+    toast.info(`${newMapType === 'leaflet' ? 'Leaflet' : newMapType === 'kakao' ? '카카오맵' : '네이버맵'}으로 변경되었습니다.`);
+  };
+
+  // 주소 검색으로 위치 선택 핸들러
+  const handleLocationSelect = (location) => {
+    setSearchLocation(location);
+    setNewDevicePosition({ lat: location.latitude, lng: location.longitude });
+    setIsModalOpen(true);
+    toast.success(`${location.name} 위치가 선택되었습니다.`);
+  };
+
+  // 마커 클릭 핸들러 (새로운 지도용)
+  const handleMarkerClick = (device) => {
+    if (device.navigation) {
+      // 길안내 처리
+      const urls = {
+        naver: `nmap://route?dlat=${device.latitude}&dlng=${device.longitude}`,
+        kakao: `kakaomap://route?ep=${device.latitude},${device.longitude}`,
+        tmap: `tmap://route?goalx=${device.longitude}&goaly=${device.latitude}`
+      };
+      handleNavigationClick(urls[device.navigation]);
+    } else {
+      // 일반 마커 클릭
+      setSelectedDevice(device);
+    }
+  };
+
+  // 마커 드래그 종료 핸들러 (새로운 지도용)
+  const handleMarkerDragEnd = (deviceId, newPosition) => {
+    setUpdatedPosition({ lat: newPosition[0], lng: newPosition[1] });
+    toast.info('마커 위치가 변경되었습니다. 저장 버튼을 클릭하여 저장하세요.');
+  };
+
   const selectedPosition = selectedDevice
     ? [selectedDevice.latitude, selectedDevice.longitude]
     : null;
@@ -250,75 +296,115 @@ function App() {
         </div>
 
         {/* 지도 영역 (모바일 반응형 적용) */}
-        <div className="w-full h-full map-container-mobile">
-          <MapContainer
-            ref={mapRef} // ref prop을 사용하여 인스턴스 할당
-            center={initialPosition}
-            zoom={13}
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={false} // 기본 줌 컨트롤 비활성화
-          >
-            <ZoomControl position="topright" /> {/* 줌 컨트롤을 우측 상단에 추가 */}
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            {devices.map(device => {
-              const isEditing = editingDevice && editingDevice.id === device.id;
-              // 수정 중일 때 updatedPosition 값이 있으면 그 위치를, 아니면 원래 위치를 사용
-              const currentMarkerPosition = isEditing && updatedPosition 
-                ? [updatedPosition.lat, updatedPosition.lng] 
-                : [device.latitude, device.longitude];
+        <div className="w-full h-full map-container-mobile relative">
+          {/* 지도 타입 선택기 */}
+          <MapTypeSelector 
+            mapType={mapType} 
+            onMapTypeChange={handleMapTypeChange} 
+          />
 
-              return (
-                <Marker 
-                  ref={el => (markerRefs.current[device.id] = el)}
-                  key={device.id} // key를 원래대로 되돌림
-                  position={currentMarkerPosition}
-                  // draggable prop은 useEffect에서 직접 제어하므로 제거
-                  eventHandlers={{
-                    dragend: (e) => {
-                      if (editingDevice && editingDevice.id === device.id) {
-                        setUpdatedPosition(e.target.getLatLng());
-                      }
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="space-y-2">
-                      <p className="font-bold text-lg">{device.name}</p>
-                      <p><b>설치일:</b> {device.installed_at}</p>
-                      {device.note && <p><b>비고:</b> {device.note}</p>}
-                      <hr className="my-2"/>
-                      <p className="font-semibold">길안내</p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleNavigationClick(`nmap://route/car?dlat=${device.latitude}&dlng=${device.longitude}&dname=${encodeURIComponent(device.name)}`)}
-                          className="text-blue-600 hover:underline"
-                        >
-                          네이버
-                        </button>
-                        <button
-                          onClick={() => handleNavigationClick(`kakaomap://route?ep=${device.latitude},${device.longitude}&by=CAR`)}
-                          className="text-blue-600 hover:underline"
-                        >
-                          카카오
-                        </button>
-                        <button
-                          onClick={() => handleNavigationClick(`tmap://route?goalname=${encodeURIComponent(device.name)}&goalx=${device.longitude}&goaly=${device.latitude}`)}
-                          className="text-blue-600 hover:underline"
-                        >
-                          TMAP
-                        </button>
+          {/* 주소 검색 (지도 타입이 leaflet이 아닐 때만 표시) */}
+          {mapType !== 'leaflet' && (
+            <div className="absolute top-4 left-32 z-[1000] w-64">
+              <AddressSearch onLocationSelect={handleLocationSelect} />
+            </div>
+          )}
+
+          {/* 지도 렌더링 */}
+          {mapType === 'leaflet' && (
+            <MapContainer
+              ref={mapRef}
+              center={initialPosition}
+              zoom={13}
+              style={{ height: '100%', width: '100%' }}
+              zoomControl={false}
+            >
+              <ZoomControl position="topright" />
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {devices.map(device => {
+                const isEditing = editingDevice && editingDevice.id === device.id;
+                const currentMarkerPosition = isEditing && updatedPosition 
+                  ? [updatedPosition.lat, updatedPosition.lng] 
+                  : [device.latitude, device.longitude];
+
+                return (
+                  <Marker 
+                    ref={el => (markerRefs.current[device.id] = el)}
+                    key={device.id}
+                    position={currentMarkerPosition}
+                    eventHandlers={{
+                      dragend: (e) => {
+                        if (editingDevice && editingDevice.id === device.id) {
+                          setUpdatedPosition(e.target.getLatLng());
+                        }
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div className="space-y-2">
+                        <p className="font-bold text-lg">{device.name}</p>
+                        <p><b>설치일:</b> {device.installed_at}</p>
+                        {device.note && <p><b>비고:</b> {device.note}</p>}
+                        <hr className="my-2"/>
+                        <p className="font-semibold">길안내</p>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleNavigationClick(`nmap://route/car?dlat=${device.latitude}&dlng=${device.longitude}&dname=${encodeURIComponent(device.name)}`)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            네이버
+                          </button>
+                          <button
+                            onClick={() => handleNavigationClick(`kakaomap://route?ep=${device.latitude},${device.longitude}&by=CAR`)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            카카오
+                          </button>
+                          <button
+                            onClick={() => handleNavigationClick(`tmap://route?goalname=${encodeURIComponent(device.name)}&goalx=${device.longitude}&goaly=${device.latitude}`)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            TMAP
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              )
-            })}
-            <MapFlyTo position={selectedPosition} />
-            <MapClickHandler />
-          </MapContainer>
+                    </Popup>
+                  </Marker>
+                )
+              })}
+              <MapFlyTo position={selectedPosition} />
+              <MapClickHandler />
+            </MapContainer>
+          )}
+
+          {/* 카카오맵 */}
+          {mapType === 'kakao' && (
+            <KakaoMap
+              devices={devices}
+              initialPosition={initialPosition}
+              onMapClick={handleMapClick}
+              onMarkerClick={handleMarkerClick}
+              selectedDevice={selectedDevice}
+              editingDevice={editingDevice}
+              onMarkerDragEnd={handleMarkerDragEnd}
+            />
+          )}
+
+          {/* 네이버맵 */}
+          {mapType === 'naver' && (
+            <NaverMap
+              devices={devices}
+              initialPosition={initialPosition}
+              onMapClick={handleMapClick}
+              onMarkerClick={handleMarkerClick}
+              selectedDevice={selectedDevice}
+              editingDevice={editingDevice}
+              onMarkerDragEnd={handleMarkerDragEnd}
+            />
+          )}
         </div>
       </div>
 
