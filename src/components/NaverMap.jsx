@@ -16,9 +16,9 @@ const NaverMap = ({
 
   // 네이버맵 초기화
   useEffect(() => {
-    // 네이버맵 스크립트 로드
+    // 네이버맵 스크립트 로드 (새로운 API 방식)
     const script = document.createElement('script');
-    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${import.meta.env.VITE_NAVER_CLIENT_ID || 'kqcolemxuh'}`;
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${import.meta.env.VITE_NAVER_CLIENT_ID || 'kqcolemxuh'}`;
     script.async = true;
     script.onload = initializeMap;
     script.onerror = (error) => {

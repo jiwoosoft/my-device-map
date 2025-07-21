@@ -1,126 +1,134 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import React, { useEffect, useRef } from 'react';
 
-// 카카오맵 API 키 설정
-const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '2a10a60806e32faa3e0ac48417c68259';
+// 카카오맵 API 키 (JavaScript 키)
+const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '18c928214d853fa807cccb53eba66924';
 
 // 카카오맵 컴포넌트
-const KakaoMap = ({ 
-  devices, 
-  initialPosition, 
-  onMapClick, 
-  onMarkerClick, 
-  selectedDevice, 
+const KakaoMap = ({
+  devices,
+  initialPosition,
+  onMapClick,
+  onMarkerClick,
+  selectedDevice,
   editingDevice,
-  onMarkerDragEnd 
+  onMarkerDragEnd
 }) => {
   const mapRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState({});
+  const mapInstanceRef = useRef(null); // 지도 인스턴스 저장
+  const markersRef = useRef({}); // 마커 인스턴스 저장
 
-  // 지도 초기화
   useEffect(() => {
-    if (map) {
-      // 지도 크기 재조정 (사이드바 토글 시)
-      const resizeMap = () => {
-        if (mapRef.current) {
-          mapRef.current.relayout();
+    // 지도 및 마커 초기화 함수
+    function initMap() {
+      if (!mapRef.current) return;
+
+      // 지도 생성
+      const map = new window.kakao.maps.Map(mapRef.current, {
+        center: new window.kakao.maps.LatLng(initialPosition[0], initialPosition[1]),
+        level: 3
+      });
+      mapInstanceRef.current = map;
+
+      // 지도 클릭 이벤트 등록
+      window.kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+        const latlng = mouseEvent.latLng;
+        if (onMapClick) onMapClick([latlng.getLat(), latlng.getLng()]);
+      });
+
+      // 기존 마커 제거
+      Object.values(markersRef.current).forEach(marker => marker.setMap(null));
+      markersRef.current = {};
+
+      // 장비별 마커 생성
+      devices.forEach(device => {
+        const marker = new window.kakao.maps.Marker({
+          position: new window.kakao.maps.LatLng(device.latitude, device.longitude),
+          map,
+          image: new window.kakao.maps.MarkerImage(
+            editingDevice?.id === device.id
+              ? "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png"
+              : "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_black.png",
+            new window.kakao.maps.Size(24, 35)
+          )
+        });
+        markersRef.current[device.id] = marker;
+
+        // 마커 클릭 이벤트
+        window.kakao.maps.event.addListener(marker, 'click', () => {
+          if (onMarkerClick) onMarkerClick(device);
+        });
+
+        // 드래그 가능 마커 (수정 모드)
+        if (editingDevice?.id === device.id) {
+          marker.setDraggable(true);
+          window.kakao.maps.event.addListener(marker, 'dragend', (mouseEvent) => {
+            const latlng = mouseEvent.latLng;
+            if (onMarkerDragEnd) onMarkerDragEnd(device.id, [latlng.getLat(), latlng.getLng()]);
+          });
         }
-      };
-
-      // 지도 크기 재조정을 위한 타이머
-      const timer = setTimeout(resizeMap, 300);
-      return () => clearTimeout(timer);
+      });
     }
-  }, [map]);
 
-  // 지도 클릭 이벤트
-  const handleMapClick = (map, mouseEvent) => {
-    const latlng = mouseEvent.latLng;
-    onMapClick([latlng.getLat(), latlng.getLng()]);
-  };
-
-  // 마커 클릭 이벤트
-  const handleMarkerClick = (device) => {
-    onMarkerClick(device);
-  };
-
-  // 마커 드래그 종료 이벤트
-  const handleMarkerDragEnd = (marker, mouseEvent) => {
-    const latlng = mouseEvent.latLng;
-    onMarkerDragEnd(device.id, [latlng.getLat(), latlng.getLng()]);
-  };
+    // SDK가 이미 로드되어 있으면 바로 load 콜백 실행
+    if (window.kakao && window.kakao.maps) {
+      window.kakao.maps.load(initMap);
+    } else {
+      // SDK 동적 로드 (autoload=false)
+      const script = document.createElement('script');
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_API_KEY}&autoload=false&libraries=services`;
+      script.async = true;
+      script.onload = () => {
+        window.kakao.maps.load(initMap);
+      };
+      document.head.appendChild(script);
+      return () => {
+        if (document.head.contains(script)) document.head.removeChild(script);
+      };
+    }
+    // eslint-disable-next-line
+  }, [devices, initialPosition, editingDevice]);
 
   return (
     <div className="w-full h-full relative">
-      <Map
-        ref={mapRef}
-        center={{ lat: initialPosition[0], lng: initialPosition[1] }}
-        style={{ width: "100%", height: "100%" }}
-        level={3}
-        onClick={handleMapClick}
-        onLoad={setMap}
-        apiKey={KAKAO_API_KEY}
-        onError={(error) => {
-          console.error('카카오맵 로드 오류:', error);
-        }}
-      >
-        {/* 장비 마커들 */}
-        {devices.map((device) => (
-          <MapMarker
-            key={device.id}
-            position={{ lat: device.latitude, lng: device.longitude }}
-            onClick={() => handleMarkerClick(device)}
-            onDragEnd={(marker, mouseEvent) => handleMarkerDragEnd(device, mouseEvent)}
-            draggable={editingDevice?.id === device.id}
-            image={{
-              src: editingDevice?.id === device.id 
-                ? "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png"
-                : "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_black.png",
-              size: { width: 24, height: 35 }
-            }}
-          >
-            {/* 마커 클릭 시 팝업 */}
-            {selectedDevice?.id === device.id && (
-              <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {device.name}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {device.installed_at}
-                </div>
-                {device.note && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {device.note}
-                  </div>
-                )}
-                
-                {/* 길안내 버튼들 */}
-                <div className="flex space-x-2 mt-3">
-                  <button
-                    onClick={() => onMarkerClick({ ...device, navigation: 'naver' })}
-                    className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                  >
-                    네이버
-                  </button>
-                  <button
-                    onClick={() => onMarkerClick({ ...device, navigation: 'kakao' })}
-                    className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
-                  >
-                    카카오
-                  </button>
-                  <button
-                    onClick={() => onMarkerClick({ ...device, navigation: 'tmap' })}
-                    className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  >
-                    TMAP
-                  </button>
-                </div>
-              </div>
-            )}
-          </MapMarker>
-        ))}
-      </Map>
+      {/* 지도 컨테이너 */}
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+      {/* 선택된 장비 팝업 */}
+      {selectedDevice && (
+        <div className="absolute top-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-3 z-10">
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {selectedDevice.name}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {selectedDevice.installed_at}
+          </div>
+          {selectedDevice.note && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {selectedDevice.note}
+            </div>
+          )}
+          {/* 길안내 버튼들 */}
+          <div className="flex space-x-2 mt-3">
+            <button
+              onClick={() => onMarkerClick({ ...selectedDevice, navigation: 'naver' })}
+              className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+            >
+              네이버
+            </button>
+            <button
+              onClick={() => onMarkerClick({ ...selectedDevice, navigation: 'kakao' })}
+              className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+            >
+              카카오
+            </button>
+            <button
+              onClick={() => onMarkerClick({ ...selectedDevice, navigation: 'tmap' })}
+              className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              TMAP
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
