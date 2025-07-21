@@ -18,13 +18,18 @@ const NaverMap = ({
   useEffect(() => {
     // 네이버맵 스크립트 로드
     const script = document.createElement('script');
-    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${import.meta.env.VITE_NAVER_CLIENT_ID || 'YOUR_NAVER_CLIENT_ID'}`;
+    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${import.meta.env.VITE_NAVER_CLIENT_ID || 'kqcolemxuh'}`;
     script.async = true;
     script.onload = initializeMap;
+    script.onerror = (error) => {
+      console.error('네이버맵 스크립트 로드 오류:', error);
+    };
     document.head.appendChild(script);
 
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 

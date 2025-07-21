@@ -19,7 +19,7 @@ const AddressSearch = ({ onLocationSelect }) => {
     setIsLoading(true);
     try {
       // 카카오 로컬 API 키 (환경변수에서 가져오기)
-      const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'YOUR_KAKAO_REST_API_KEY';
+      const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
       
       const response = await fetch(
         `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`,

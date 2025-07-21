@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
 
 // 카카오맵 API 키 설정
-const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || 'YOUR_KAKAO_JAVASCRIPT_API_KEY';
+const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '2a10a60806e32faa3e0ac48417c68259';
 
 // 카카오맵 컴포넌트
 const KakaoMap = ({ 
@@ -61,6 +61,9 @@ const KakaoMap = ({
         onClick={handleMapClick}
         onLoad={setMap}
         apiKey={KAKAO_API_KEY}
+        onError={(error) => {
+          console.error('카카오맵 로드 오류:', error);
+        }}
       >
         {/* 장비 마커들 */}
         {devices.map((device) => (
