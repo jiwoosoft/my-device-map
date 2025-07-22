@@ -208,21 +208,21 @@ const NaverMap = ({
             ×
           </button>
 
-          <div className="text-sm font-bold text-gray-900 mb-2" style={{ color: '#000 !important' }}>
+          <div className="text-sm font-bold text-gray-900 mb-2" style={{ color: '#ff0000 !important' }}>
             {displayDevice.name}
           </div>
-          <div className="text-xs text-gray-900 mb-1 font-semibold" style={{ color: '#000 !important' }}>
+          <div className="text-xs text-gray-900 mb-1 font-semibold" style={{ color: '#ff0000 !important' }}>
             설치일: {displayDevice.installed_at}
           </div>
           {displayDevice.note && (
-            <div className="text-xs text-gray-900 mb-3 font-medium" style={{ color: '#000 !important' }}>
+            <div className="text-xs text-gray-900 mb-3 font-medium" style={{ color: '#ff0000 !important' }}>
               비고: {displayDevice.note}
             </div>
           )}
 
           {/* 길안내 버튼들 */}
           <div className="border-t border-gray-400 dark:border-gray-500 pt-2">
-            <div className="text-xs font-bold text-gray-900 mb-2" style={{ color: '#000 !important' }}>길안내</div>
+            <div className="text-xs font-bold text-gray-900 mb-2" style={{ color: '#ff0000 !important' }}>길안내</div>
             <div className="flex space-x-2">
               <button
                 onClick={() => onMarkerClick({ ...displayDevice, navigation: 'naver' })}
