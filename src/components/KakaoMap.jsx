@@ -357,17 +357,17 @@ const KakaoMap = ({
       {/* 선택된 장비 팝업 */}
       {displayDevice && (
         <div 
-          className="absolute bg-gray-100 dark:bg-gray-900 rounded-lg shadow-xl border-2 border-gray-400 dark:border-gray-600 p-4 max-w-xs"
+          className="absolute bg-gray-200 dark:bg-gray-900 rounded-lg shadow-xl border-2 border-gray-500 dark:border-gray-600 p-4 max-w-xs"
           style={{ 
             zIndex: 10000, 
             position: 'absolute',
             top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: '#f3f4f6',
+            backgroundColor: '#e5e7eb',
             borderRadius: '12px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.2)',
-            border: '2px solid #9ca3af',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.3)',
+            border: '3px solid #6b7280',
             minWidth: '280px'
           }}
         >
