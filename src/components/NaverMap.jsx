@@ -167,6 +167,10 @@ const NaverMap = ({
   const closeInfoWindow = () => {
     console.log('네이버맵 정보창 닫기');
     setLocalSelectedDevice(null);
+    // 부모 컴포넌트에도 선택 해제 알림
+    if (onMarkerClick) {
+      onMarkerClick(null);
+    }
   };
 
   // 표시할 장비 결정 (로컬 상태 우선, 없으면 부모 상태 사용)

@@ -147,6 +147,9 @@ function App() {
   const handleMapClick = (coordinates) => {
     setEditingDevice(null); // 지도 클릭 시에는 '추가' 모드
     
+    // 지도 클릭 시 정보창 닫기 (모바일에서 팝업 가림 방지)
+    setSelectedDevice(null);
+    
     // 좌표 데이터 형태에 따라 처리
     let position;
     if (Array.isArray(coordinates)) {
@@ -232,6 +235,12 @@ function App() {
 
   // 마커 클릭 핸들러 (새로운 지도용)
   const handleMarkerClick = (device) => {
+    if (device === null) {
+      // 정보창 닫기 요청
+      setSelectedDevice(null);
+      return;
+    }
+    
     if (device.navigation) {
       // 길안내 처리
       const urls = {
