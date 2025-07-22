@@ -216,7 +216,65 @@ function App() {
   }
 
   const handleNavigationClick = (url) => {
-    window.open(url, '_blank');
+    console.log('길안내 URL 실행:', url);
+    
+    try {
+      // 네이버맵의 경우 여러 URL 스키마 시도
+      if (url.includes('nmap://')) {
+        // 네이버맵 앱 실행 시도 (여러 스키마)
+        const naverUrls = [
+          url, // 원본 URL
+          url.replace('nmap://route?', 'nmap://route/car?'), // car 모드
+          url.replace('nmap://route?', 'nmap://route/walk?'), // walk 모드
+          url.replace('nmap://route?', 'nmap://route/transit?') // 대중교통 모드
+        ];
+        
+        // 순차적으로 시도
+        naverUrls.forEach((naverUrl, index) => {
+          setTimeout(() => {
+            const link = document.createElement('a');
+            link.href = naverUrl;
+            link.click();
+          }, index * 500); // 0.5초 간격으로 시도
+        });
+        
+        // 4초 후 웹 버전으로 폴백
+        setTimeout(() => {
+          const fallbackUrl = `https://map.naver.com/v5/entry/route?dlat=${url.match(/dlat=([^&]+)/)?.[1]}&dlng=${url.match(/dlng=([^&]+)/)?.[1]}&dname=${url.match(/dname=([^&]+)/)?.[1] || ''}&mode=car`;
+          window.open(fallbackUrl, '_blank');
+        }, 4000);
+        
+      } else {
+        // 카카오맵, TMAP은 기존 방식
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+        
+        // 3초 후 웹 버전으로 폴백
+        setTimeout(() => {
+          if (url.includes('kakaomap://')) {
+            const fallbackUrl = `https://map.kakao.com/link/to/${url.match(/ep=([^&]+)/)?.[1] || ''}`;
+            window.open(fallbackUrl, '_blank');
+          } else if (url.includes('tmap://')) {
+            const fallbackUrl = `https://tmap.co.kr/route?goalx=${url.match(/goalx=([^&]+)/)?.[1]}&goaly=${url.match(/goaly=([^&]+)/)?.[1]}`;
+            window.open(fallbackUrl, '_blank');
+          }
+        }, 3000);
+      }
+      
+    } catch (error) {
+      console.error('길안내 실행 중 오류:', error);
+      // 오류 발생 시 웹 버전으로 리다이렉트
+      if (url.includes('nmap://')) {
+        window.open(`https://map.naver.com/v5/entry/route`, '_blank');
+      } else if (url.includes('kakaomap://')) {
+        window.open('https://map.kakao.com', '_blank');
+      } else if (url.includes('tmap://')) {
+        window.open('https://tmap.co.kr', '_blank');
+      }
+    }
   };
 
   // 지도 타입 변경 핸들러
@@ -242,12 +300,14 @@ function App() {
     }
     
     if (device.navigation) {
-      // 길안내 처리
+      // 길안내 처리 - 모바일에서 더 안정적인 URL 스키마 사용
       const urls = {
-        naver: `nmap://route?dlat=${device.latitude}&dlng=${device.longitude}`,
-        kakao: `kakaomap://route?ep=${device.latitude},${device.longitude}`,
-        tmap: `tmap://route?goalx=${device.longitude}&goaly=${device.latitude}`
+        naver: `nmap://route?dlat=${device.latitude}&dlng=${device.longitude}&dname=${encodeURIComponent(device.name)}&mode=car`,
+        kakao: `kakaomap://route?ep=${device.latitude},${device.longitude}&by=CAR`,
+        tmap: `tmap://route?goalname=${encodeURIComponent(device.name)}&goalx=${device.longitude}&goaly=${device.latitude}`
       };
+      
+      console.log(`${device.navigation} 길안내 실행:`, urls[device.navigation]);
       handleNavigationClick(urls[device.navigation]);
     } else {
       // 일반 마커 클릭
