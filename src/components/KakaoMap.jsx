@@ -116,22 +116,32 @@ const KakaoMap = ({
         // 지도 클릭 이벤트 등록
         window.kakao.maps.event.addListener(map, 'click', handleMapClick);
 
-        // 지도 중심 변경 이벤트 등록
+        // 지도 중심 변경 이벤트 등록 (디바운싱 적용으로 성능 최적화)
+        let centerChangeTimeout;
         window.kakao.maps.event.addListener(map, 'center_changed', () => {
           try {
-            const center = map.getCenter();
-            setCurrentCenter([center.getLat(), center.getLng()]);
+            // 디바운싱으로 과도한 상태 업데이트 방지
+            clearTimeout(centerChangeTimeout);
+            centerChangeTimeout = setTimeout(() => {
+              const center = map.getCenter();
+              setCurrentCenter([center.getLat(), center.getLng()]);
+            }, 100); // 100ms 지연으로 성능 최적화
           } catch (error) {
             console.error('중심 변경 이벤트 처리 중 오류:', error);
           }
         });
 
-        // 지도 줌 레벨 변경 이벤트 등록
+        // 지도 줌 레벨 변경 이벤트 등록 (디바운싱 적용)
+        let zoomChangeTimeout;
         window.kakao.maps.event.addListener(map, 'zoom_changed', () => {
           try {
-            const level = map.getLevel();
-            setCurrentLevel(level);
-            console.log('카카오맵 줌 레벨 변경:', level);
+            // 디바운싱으로 과도한 상태 업데이트 방지
+            clearTimeout(zoomChangeTimeout);
+            zoomChangeTimeout = setTimeout(() => {
+              const level = map.getLevel();
+              setCurrentLevel(level);
+              console.log('카카오맵 줌 레벨 변경:', level);
+            }, 100); // 100ms 지연으로 성능 최적화
           } catch (error) {
             console.error('줌 변경 이벤트 처리 중 오류:', error);
           }
@@ -146,16 +156,28 @@ const KakaoMap = ({
 
         console.log('마커 생성 시작, devices:', devices);
 
-        // 장비별 마커 생성
+        // 장비별 마커 생성 (중복 방지)
         devices.forEach(device => {
           try {
+            // 기존 마커가 있으면 제거
+            if (markersRef.current[device.id]) {
+              try {
+                window.kakao.maps.event.clearListeners(markersRef.current[device.id], 'click');
+                window.kakao.maps.event.clearListeners(markersRef.current[device.id], 'dragend');
+                markersRef.current[device.id].setMap(null);
+              } catch (error) {
+                console.error('기존 마커 제거 중 오류:', error);
+              }
+            }
+
+            // 새 마커 생성
             const marker = new window.kakao.maps.Marker({
               position: new window.kakao.maps.LatLng(device.latitude, device.longitude),
               map
             });
             markersRef.current[device.id] = marker;
 
-            // 마커 클릭 이벤트
+            // 마커 클릭 이벤트 (한 번만 등록)
             window.kakao.maps.event.addListener(marker, 'click', () => {
               handleMarkerClick(device);
             });
@@ -210,7 +232,7 @@ const KakaoMap = ({
       };
     }
     // eslint-disable-next-line
-  }, [devices, currentCenter, currentLevel, editingDevice, handleMapClick, handleMarkerClick]);
+  }, [devices, editingDevice, handleMapClick, handleMarkerClick]); // currentCenter, currentLevel 제거로 과도한 재렌더링 방지
 
   // 선택된 장비가 변경될 때 지도를 해당 위치로 이동
   useEffect(() => {
@@ -222,14 +244,26 @@ const KakaoMap = ({
           selectedDevice.longitude
         );
         
-        // 부드러운 이동 애니메이션으로 해당 위치로 이동 (줌 레벨 7로 조정 - 더 축소)
-        mapInstanceRef.current.panTo(newPosition);
-        mapInstanceRef.current.setLevel(7);
-        // 현재 중심 위치와 줌 레벨 업데이트
-        setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
-        setCurrentLevel(7);
-        // 로컬 상태도 업데이트
-        setLocalSelectedDevice(selectedDevice);
+        // 카카오맵의 내장 애니메이션 기능 사용 (부드럽고 성능 최적화)
+        mapInstanceRef.current.panTo(newPosition, {
+          animate: {
+            duration: 800, // 애니메이션 지속 시간 (ms)
+            easing: 'easeOutCubic' // 부드러운 감속 효과
+          }
+        });
+        
+        // 줌 레벨도 부드럽게 변경
+        setTimeout(() => {
+          try {
+            mapInstanceRef.current.setLevel(7);
+            setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
+            setCurrentLevel(7);
+            setLocalSelectedDevice(selectedDevice);
+          } catch (error) {
+            console.error('줌 레벨 설정 중 오류:', error);
+          }
+        }, 400); // 이동 애니메이션 중간에 줌 변경
+        
       } catch (error) {
         console.error('장비 선택 이동 중 오류:', error);
       }
