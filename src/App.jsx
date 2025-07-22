@@ -48,6 +48,15 @@ function MapFlyTo({ position }) {
 function App() {
   // 로컬 스토리지를 사용하여 장비 목록을 관리합니다.
   const [devices, setDevices] = useLocalStorage('devices', []);
+  // 폴더 목록을 관리합니다.
+  const [folders, setFolders] = useLocalStorage('folders', [
+    {
+      id: 'default',
+      name: '기본 폴더',
+      createdAt: new Date().toISOString(),
+      isExpanded: true
+    }
+  ]);
   // 현재 위치 상태를 관리합니다.
   const [currentPosition, setCurrentPosition] = useState(null);
   // 모달 창의 표시 여부를 관리합니다.
@@ -88,6 +97,20 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  // 기존 장비 데이터에 folderId 필드 추가 (마이그레이션)
+  useEffect(() => {
+    const updatedDevices = devices.map(device => {
+      if (!device.folderId) {
+        return { ...device, folderId: 'default' };
+      }
+      return device;
+    });
+    
+    if (JSON.stringify(updatedDevices) !== JSON.stringify(devices)) {
+      setDevices(updatedDevices);
+    }
+  }, [devices, setDevices]);
 
   // 수정 모드가 변경될 때마다 마커의 드래그 상태를 직접 제어
   useEffect(() => {
@@ -317,8 +340,49 @@ function App() {
 
   // 마커 드래그 종료 핸들러 (새로운 지도용)
   const handleMarkerDragEnd = (deviceId, newPosition) => {
-    setUpdatedPosition({ lat: newPosition[0], lng: newPosition[1] });
-    toast.info('마커 위치가 변경되었습니다. 저장 버튼을 클릭하여 저장하세요.');
+    setDevices(prevDevices => 
+      prevDevices.map(device => 
+        device.id === deviceId 
+          ? { ...device, latitude: newPosition.lat, longitude: newPosition.lng }
+          : device
+      )
+    );
+  };
+
+  // 폴더 관련 함수들
+  const createFolder = (folderName) => {
+    const newFolder = {
+      id: `folder_${Date.now()}`,
+      name: folderName,
+      createdAt: new Date().toISOString(),
+      isExpanded: true
+    };
+    setFolders(prev => [...prev, newFolder]);
+    return newFolder.id;
+  };
+
+  const updateFolder = (folderId, updates) => {
+    setFolders(prev => 
+      prev.map(folder => 
+        folder.id === folderId ? { ...folder, ...updates } : folder
+      )
+    );
+  };
+
+  const deleteFolder = (folderId) => {
+    // 폴더를 삭제할 때 해당 폴더의 장비들을 기본 폴더로 이동
+    setDevices(prev => 
+      prev.map(device => 
+        device.folderId === folderId 
+          ? { ...device, folderId: 'default' }
+          : device
+      )
+    );
+    setFolders(prev => prev.filter(folder => folder.id !== folderId));
+  };
+
+  const toggleFolderExpansion = (folderId) => {
+    updateFolder(folderId, { isExpanded: !folders.find(f => f.id === folderId)?.isExpanded });
   };
 
   const selectedPosition = selectedDevice
@@ -390,10 +454,14 @@ function App() {
           <div className="device-list-mobile flex-1">
             <DeviceList
               devices={devices}
+              folders={folders}
               selectedDevice={selectedDevice}
               onDeviceSelect={handleDeviceSelect}
               onDeleteDevice={handleDeleteDevice}
               onEditDevice={handleEditDevice}
+              onToggleFolderExpansion={toggleFolderExpansion}
+              onUpdateFolder={updateFolder}
+              onDeleteFolder={deleteFolder}
             />
           </div>
         </div>
@@ -501,12 +569,14 @@ function App() {
         </div>
       </div>
 
-      {/* 모달은 메인 레이아웃 컨테이너 외부에 렌더링 */}
+      {/* 장비 등록/수정 모달 */}
       {isModalOpen && (
         <DeviceFormModal
           device={editingDevice}
+          folders={folders}
           onClose={closeModal}
           onSave={handleSaveDevice}
+          onCreateFolder={createFolder}
         />
       )}
 

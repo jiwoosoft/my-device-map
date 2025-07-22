@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
 
-const DeviceFormModal = ({ device, onClose, onSave }) => {
+const DeviceFormModal = ({ device, folders, onClose, onSave, onCreateFolder }) => {
   const [name, setName] = useState('');
   const [installedAt, setInstalledAt] = useState('');
   const [note, setNote] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState('default');
+  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const isEditing = !!device;
 
@@ -14,11 +17,13 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
       setName(device.name);
       setInstalledAt(device.installed_at);
       setNote(device.note);
+      setSelectedFolderId(device.folderId || 'default');
     } else {
       // '추가' 모드일 때 폼을 초기화합니다.
       setName('');
       setInstalledAt('');
       setNote('');
+      setSelectedFolderId('default');
     }
   }, [device, isEditing]);
 
@@ -28,7 +33,25 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
       toast.warn('장비명과 설치일을 입력해주세요.');
       return;
     }
-    onSave({ name, installed_at: installedAt, note });
+    onSave({ 
+      name, 
+      installed_at: installedAt, 
+      note, 
+      folderId: selectedFolderId 
+    });
+  };
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) {
+      toast.warn('폴더명을 입력해주세요.');
+      return;
+    }
+    
+    const newFolderId = onCreateFolder(newFolderName.trim());
+    setSelectedFolderId(newFolderId);
+    setShowNewFolderInput(false);
+    setNewFolderName('');
+    toast.success('새 폴더가 생성되었습니다.');
   };
 
   return ReactDOM.createPortal(
@@ -57,6 +80,66 @@ const DeviceFormModal = ({ device, onClose, onSave }) => {
               required
             />
           </div>
+          
+          {/* 폴더 선택 */}
+          <div className="mb-4">
+            <label htmlFor="folder" className="block text-sm font-medium text-gray-700 dark:text-gray-300">폴더</label>
+            <div className="mt-1 flex space-x-2">
+              <select
+                id="folder"
+                value={selectedFolderId}
+                onChange={(e) => setSelectedFolderId(e.target.value)}
+                className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                {folders.map(folder => (
+                  <option key={folder.id} value={folder.id}>
+                    📁 {folder.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowNewFolderInput(true)}
+                className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              >
+                새 폴더
+              </button>
+            </div>
+            
+            {/* 새 폴더 생성 입력창 */}
+            {showNewFolderInput && (
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    placeholder="폴더명 입력"
+                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-500 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateFolder}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                  >
+                    생성
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewFolderInput(false);
+                      setNewFolderName('');
+                    }}
+                    className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="mb-4">
             {/* 다크모드 글자색 추가 */}
             <label htmlFor="installedAt" className="block text-sm font-medium text-gray-700 dark:text-gray-300">설치일</label>
