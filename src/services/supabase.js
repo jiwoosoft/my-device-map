@@ -29,52 +29,43 @@ export const isCloudSyncEnabled = () => {
 
 // 장비 데이터를 Supabase에 저장하는 함수
 export const saveDevicesToCloud = async (devices, folders = []) => {
+  if (!isCloudSyncEnabled()) {
+    return { success: false, error: '클라우드 동기화가 비활성화되어 있습니다.' };
+  }
+
   try {
-    if (!isCloudSyncEnabled()) {
-      console.log('클라우드 동기화가 비활성화되어 있습니다.');
-      return { success: false, error: 'Cloud sync disabled' };
-    }
-
-    if (!supabase) {
-      console.log('Supabase 클라이언트가 초기화되지 않았습니다.');
-      return { success: false, error: 'Supabase client not initialized' };
-    }
-
-    // 먼저 테이블 존재 여부 확인
-    const { data: tableCheck, error: tableError } = await supabase
+    // 테이블 존재 여부 확인
+    const { data: tableExists, error: tableError } = await supabase
       .from('devices')
-      .select('count')
+      .select('id')
       .limit(1);
 
-    if (tableError) {
-      console.error('테이블 접근 오류:', tableError);
-      
-      // API 키 오류인지 확인
-      if (tableError.message && tableError.message.includes('Invalid API key')) {
-        return { 
-          success: false, 
-          error: `API 키 오류: ${tableError.message}. Supabase 대시보드에서 올바른 API 키를 확인해주세요.` 
-        };
-      }
-      
-      // 테이블이 없는 경우
-      if (tableError.code === 'PGRST116') {
-        return { 
-          success: false, 
-          error: `테이블이 존재하지 않습니다. Supabase 대시보드에서 'devices' 테이블을 생성해주세요.` 
-        };
-      }
-      
-      return { 
-        success: false, 
-        error: `테이블 접근 실패: ${tableError.message}` 
-      };
+    if (tableError && tableError.code === '42P01') {
+      console.error('devices 테이블이 존재하지 않습니다.');
+      return { success: false, error: 'devices 테이블이 존재하지 않습니다.' };
     }
 
-    // 새 데이터 삽입 (folderId 포함)
+    // 스키마 캐시 문제를 해결하기 위해 folderId를 임시로 제거
+    const devicesWithoutFolderId = devices.map(device => {
+      const { folderId, ...deviceWithoutFolderId } = device;
+      return deviceWithoutFolderId;
+    });
+
+    // 기존 데이터 삭제 후 새 데이터 삽입
+    const { error: deleteError } = await supabase
+      .from('devices')
+      .delete()
+      .neq('id', 0); // 모든 데이터 삭제
+
+    if (deleteError) {
+      console.error('기존 데이터 삭제 오류:', deleteError);
+      return { success: false, error: deleteError };
+    }
+
+    // 새 데이터 삽입 (folderId 제외)
     const { error: insertError } = await supabase
       .from('devices')
-      .insert(devices);
+      .insert(devicesWithoutFolderId);
 
     if (insertError) {
       console.error('데이터 삽입 오류:', insertError);
