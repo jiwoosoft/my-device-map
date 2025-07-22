@@ -8,7 +8,7 @@ const AddressSearch = ({ onLocationSelect }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // 카카오 주소 검색 API 호출
+  // 통합 주소 검색 API 호출 (카카오 + 네이버)
   const searchAddress = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -17,25 +17,30 @@ const AddressSearch = ({ onLocationSelect }) => {
     }
 
     setIsLoading(true);
+    const allResults = [];
+
     try {
-      // 카카오 로컬 API 키 (환경변수에서 가져오기)
-      const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
+      // 1. 카카오 키워드 검색 (장소명, 업체명)
+      const kakaoKeywordResults = await searchKakaoKeyword(query);
+      allResults.push(...kakaoKeywordResults);
+
+      // 2. 카카오 주소 검색 (도로명, 지번 주소)
+      const kakaoAddressResults = await searchKakaoAddress(query);
+      allResults.push(...kakaoAddressResults);
+
+      // 3. 카카오 카테고리 검색 (업종별 검색)
+      const kakaoCategoryResults = await searchKakaoCategory(query);
+      allResults.push(...kakaoCategoryResults);
+
+      // 4. 네이버 주소 검색 (보조 검색)
+      const naverResults = await searchNaverAddress(query);
+      allResults.push(...naverResults);
+
+      // 중복 제거 및 정렬
+      const uniqueResults = removeDuplicates(allResults);
+      const sortedResults = sortResults(uniqueResults, query);
       
-      const response = await fetch(
-        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`,
-        {
-          headers: {
-            'Authorization': `KakaoAK ${KAKAO_API_KEY}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('주소 검색에 실패했습니다.');
-      }
-
-      const data = await response.json();
-      setSearchResults(data.documents || []);
+      setSearchResults(sortedResults.slice(0, 20)); // 최대 20개 결과
       setShowResults(true);
     } catch (error) {
       console.error('주소 검색 오류:', error);
@@ -46,14 +51,18 @@ const AddressSearch = ({ onLocationSelect }) => {
           place_name: '정읍북면농공단지',
           address_name: '전라북도 정읍시 북면 농공단지',
           x: '126.88',
-          y: '35.63'
+          y: '35.63',
+          source: 'kakao',
+          searchType: 'keyword'
         },
         {
           id: '2', 
           place_name: '정읍시청',
           address_name: '전라북도 정읍시 시기2길 25',
           x: '126.85',
-          y: '35.57'
+          y: '35.57',
+          source: 'kakao',
+          searchType: 'keyword'
         }
       ]);
       setShowResults(true);
@@ -62,17 +71,213 @@ const AddressSearch = ({ onLocationSelect }) => {
     }
   };
 
+  // 카카오 키워드 검색
+  const searchKakaoKeyword = async (query) => {
+    try {
+      const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
+      
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=10`,
+        {
+          headers: {
+            'Authorization': `KakaoAK ${KAKAO_API_KEY}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        return (data.documents || []).map(item => ({
+          ...item,
+          source: 'kakao',
+          searchType: 'keyword'
+        }));
+      }
+    } catch (error) {
+      console.error('카카오 키워드 검색 오류:', error);
+    }
+    return [];
+  };
+
+  // 카카오 주소 검색
+  const searchKakaoAddress = async (query) => {
+    try {
+      const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
+      
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(query)}&size=10`,
+        {
+          headers: {
+            'Authorization': `KakaoAK ${KAKAO_API_KEY}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        return (data.documents || []).map(item => ({
+          id: `addr_${item.id}`,
+          place_name: item.address_name,
+          address_name: item.address_name,
+          x: item.x,
+          y: item.y,
+          source: 'kakao',
+          searchType: 'address'
+        }));
+      }
+    } catch (error) {
+      console.error('카카오 주소 검색 오류:', error);
+    }
+    return [];
+  };
+
+  // 카카오 카테고리 검색 (업종별 검색)
+  const searchKakaoCategory = async (query) => {
+    try {
+      const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
+      
+      // 일반적인 업종 카테고리들
+      const categories = [
+        'FD6', // 음식점
+        'CE7', // 카페
+        'CS2', // 편의점
+        'PS3', // 유치원
+        'SC4', // 학교
+        'HP8', // 병원
+        'PM9', // 약국
+        'OL7', // 주유소
+        'SW8', // 지하철역
+        'PK6'  // 주차장
+      ];
+
+      const categoryResults = [];
+      
+      for (const category of categories) {
+        try {
+          const response = await fetch(
+            `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=${category}&query=${encodeURIComponent(query)}&size=3`,
+            {
+              headers: {
+                'Authorization': `KakaoAK ${KAKAO_API_KEY}`
+              }
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const results = (data.documents || []).map(item => ({
+              ...item,
+              source: 'kakao',
+              searchType: 'category',
+              category: category
+            }));
+            categoryResults.push(...results);
+          }
+        } catch (error) {
+          console.error(`카테고리 ${category} 검색 오류:`, error);
+        }
+      }
+
+      return categoryResults;
+    } catch (error) {
+      console.error('카카오 카테고리 검색 오류:', error);
+    }
+    return [];
+  };
+
+  // 네이버 주소 검색 (보조)
+  const searchNaverAddress = async (query) => {
+    try {
+      const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID || 'kqcolemxuh';
+      const NAVER_CLIENT_SECRET = import.meta.env.VITE_NAVER_CLIENT_SECRET || 'your_secret_key';
+      
+      const response = await fetch(
+        `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5`,
+        {
+          headers: {
+            'X-Naver-Client-Id': NAVER_CLIENT_ID,
+            'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        return (data.items || []).map((item, index) => ({
+          id: `naver_${index}`,
+          place_name: item.title.replace(/<[^>]*>/g, ''),
+          address_name: item.address.replace(/<[^>]*>/g, ''),
+          x: item.mapx,
+          y: item.mapy,
+          source: 'naver',
+          searchType: 'local'
+        }));
+      }
+    } catch (error) {
+      console.error('네이버 주소 검색 오류:', error);
+    }
+    return [];
+  };
+
+  // 중복 제거
+  const removeDuplicates = (results) => {
+    const seen = new Set();
+    return results.filter(result => {
+      const key = `${result.place_name}_${result.address_name}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  };
+
+  // 검색 결과 정렬 (정확도 순)
+  const sortResults = (results, query) => {
+    return results.sort((a, b) => {
+      // 정확한 일치 우선
+      const aExactMatch = a.place_name.toLowerCase().includes(query.toLowerCase()) || 
+                         a.address_name.toLowerCase().includes(query.toLowerCase());
+      const bExactMatch = b.place_name.toLowerCase().includes(query.toLowerCase()) || 
+                         b.address_name.toLowerCase().includes(query.toLowerCase());
+      
+      if (aExactMatch && !bExactMatch) return -1;
+      if (!aExactMatch && bExactMatch) return 1;
+      
+      // 카카오 결과 우선
+      if (a.source === 'kakao' && b.source !== 'kakao') return -1;
+      if (a.source !== 'kakao' && b.source === 'kakao') return 1;
+      
+      return 0;
+    });
+  };
+
   // 검색어 입력 처리
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
     
-    // 디바운싱 (500ms 후 검색)
+    // 디바운싱 (300ms 후 검색 - 더 빠른 응답)
     clearTimeout(window.searchTimeout);
     window.searchTimeout = setTimeout(() => {
       searchAddress(query);
-    }, 500);
+    }, 300);
   };
+
+  // 검색 결과 외부 클릭 시 닫기
+  const handleClickOutside = (e) => {
+    if (!e.target.closest('.address-search-container')) {
+      setShowResults(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 외부 클릭 이벤트 리스너 추가
+  React.useEffect(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   // 검색 결과 선택
   const handleResultSelect = (result) => {
@@ -89,7 +294,7 @@ const AddressSearch = ({ onLocationSelect }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative address-search-container">
       {/* 검색 입력창 */}
       <div className="relative">
         <input
@@ -126,11 +331,31 @@ const AddressSearch = ({ onLocationSelect }) => {
                          border-b border-gray-200 dark:border-gray-600 last:border-b-0
                          transition-colors duration-150"
             >
-              <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                {result.place_name}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {result.address_name}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                    {result.place_name}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {result.address_name}
+                  </div>
+                </div>
+                <div className="ml-2 flex items-center">
+                  {/* 검색 타입 표시 */}
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    result.searchType === 'keyword' 
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      : result.searchType === 'address'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      : result.searchType === 'category'
+                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                      : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                  }`}>
+                    {result.searchType === 'keyword' ? '장소' : 
+                     result.searchType === 'address' ? '주소' : 
+                     result.searchType === 'category' ? '업종' : '네이버'}
+                  </span>
+                </div>
               </div>
             </button>
           ))}
