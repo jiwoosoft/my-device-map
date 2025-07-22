@@ -251,17 +251,17 @@ function App() {
     <>
       {/* 부모 컨테이너에 relative 속성 추가 */}
       <div className="relative flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden">
-        {/* 사이드바 (모바일 반응형 적용) - 토글버튼과 주소검색을 내부로 이동, 모바일 주소창 고려 */}
-        <div className={`absolute top-0 left-0 h-full z-[1001] w-40 bg-white dark:bg-gray-800 p-4 pt-16 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out sidebar-mobile ${isSidebarOpen ? 'translate-x-0 open' : '-translate-x-full'}`}>
-          {/* 토글 버튼을 사이드바 내부로 이동 */}
-          <button 
-            onClick={toggleSidebar}
-            className={`mb-4 p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out w-full`}
-            aria-label="Toggle sidebar"
-          >
-            {isSidebarOpen ? '◀' : '▶'}
-          </button>
+        {/* 토글 버튼을 사이드바 외부로 이동 - 반응형 위치 조정 */}
+        <button 
+          onClick={toggleSidebar}
+          className={`absolute top-16 z-[1005] p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out sidebar-toggle-external ${isSidebarOpen ? 'left-44 md:left-64 lg:left-80' : 'left-4'}`}
+          aria-label="Toggle sidebar"
+        >
+          {isSidebarOpen ? '◀' : '▶'}
+        </button>
 
+        {/* 사이드바 (반응형 적용) - PC에서는 넓게, 모바일에서는 좁게 */}
+        <div className={`absolute top-0 left-0 h-full z-[1001] w-40 md:w-64 lg:w-80 bg-white dark:bg-gray-800 p-4 pt-32 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out sidebar-mobile ${isSidebarOpen ? 'translate-x-0 open' : '-translate-x-full'}`}>
           {/* 주소 검색을 사이드바 내부로 이동 (지도 타입이 leaflet이 아닐 때만 표시) */}
           {mapType !== 'leaflet' && (
             <div className="mb-4">

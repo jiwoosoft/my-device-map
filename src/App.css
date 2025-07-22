@@ -13,12 +13,12 @@
     transform: translateX(0) !important;
   }
   
-  /* 토글 버튼 모바일 위치 조정 */
-  .toggle-button-mobile {
+  /* 토글 버튼 모바일 위치 조정 - 제거하여 JSX에서 설정한 위치 사용 */
+  /* .toggle-button-mobile {
     top: 1rem !important;
     left: 1rem !important;
     z-index: 1002 !important;
-  }
+  } */
   
   /* 지도 영역 모바일 최적화 */
   .map-container-mobile {
@@ -148,10 +148,10 @@
 
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
-  .toggle-button-mobile {
+  /* .toggle-button-mobile {
     min-width: 44px !important;
     min-height: 44px !important;
-  }
+  } */
   
   .cloud-sync-mobile button {
     min-height: 44px !important;
@@ -161,6 +161,13 @@
     min-width: 44px !important;
     min-height: 44px !important;
   }
+}
+
+/* 토글 버튼 외부 위치 강제 설정 */
+.sidebar-toggle-external {
+  position: absolute !important;
+  top: 4rem !important;
+  z-index: 1005 !important;
 }
 
 /* 강제 표시 규칙 (모든 화면 크기에서) */
