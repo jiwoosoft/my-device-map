@@ -5,8 +5,10 @@ import useCloudSync from '../hooks/useCloudSync';
  * 클라우드 동기화 설정 컴포넌트
  * @param {Array} devices 현재 장비 목록
  * @param {Function} setDevices 장비 목록 업데이트 함수
+ * @param {Array} folders 현재 폴더 목록
+ * @param {Function} setFolders 폴더 목록 업데이트 함수
  */
-function CloudSyncSettings({ devices, setDevices }) {
+function CloudSyncSettings({ devices, setDevices, folders = [], setFolders = null }) {
   const {
     cloudSyncEnabled,
     isSyncing,
@@ -14,7 +16,7 @@ function CloudSyncSettings({ devices, setDevices }) {
     uploadToCloud,
     downloadFromCloud,
     syncWithCloud
-  } = useCloudSync(devices, setDevices);
+  } = useCloudSync(devices, setDevices, folders, setFolders);
 
   // 마지막 동기화 시간을 포맷팅하는 함수
   const formatLastSyncTime = (time) => {
@@ -99,9 +101,9 @@ function CloudSyncSettings({ devices, setDevices }) {
         </div>
       </div>
 
-      {/* 정보 */}
-      <div className="mt-3 text-xs text-blue-600 dark:text-blue-400">
-        현재 {devices.length}개 장비가 로컬에 저장되어 있습니다.
+      {/* 현재 상태 정보 */}
+      <div className="mt-3 text-xs text-blue-600 dark:text-blue-300">
+        현재 {devices.length}개 장비, {folders.length}개 폴더가 로컬에 저장되어 있습니다.
       </div>
     </div>
   );

@@ -447,7 +447,12 @@ function App() {
           
           {/* 클라우드 동기화 설정 */}
           <div className="cloud-sync-mobile mb-4" style={{display: 'block', visibility: 'visible', opacity: 1}}>
-            <CloudSyncSettings devices={devices} setDevices={setDevices} />
+            <CloudSyncSettings 
+              devices={devices} 
+              setDevices={setDevices}
+              folders={folders}
+              setFolders={setFolders}
+            />
           </div>
           
           {/* 장비 목록 (검색 기능 포함) */}

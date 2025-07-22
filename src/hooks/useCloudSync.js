@@ -6,9 +6,11 @@ import { toast } from 'react-toastify';
  * 클라우드 동기화를 위한 커스텀 훅
  * @param {Array} devices 현재 장비 목록
  * @param {Function} setDevices 장비 목록 업데이트 함수
+ * @param {Array} folders 현재 폴더 목록
+ * @param {Function} setFolders 폴더 목록 업데이트 함수
  * @returns {Object} 클라우드 동기화 관련 함수들과 상태
  */
-function useCloudSync(devices, setDevices) {
+function useCloudSync(devices, setDevices, folders = [], setFolders = null) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
 
@@ -24,11 +26,11 @@ function useCloudSync(devices, setDevices) {
 
     setIsSyncing(true);
     try {
-      const result = await saveDevicesToCloud(devices);
+      const result = await saveDevicesToCloud(devices, folders);
       
       if (result.success) {
         setLastSyncTime(new Date());
-        toast.success(`클라우드 업로드 성공! (${devices.length}개 장비)`);
+        toast.success(`클라우드 업로드 성공! (${devices.length}개 장비, ${folders.length}개 폴더)`);
         return { success: true };
       } else {
         toast.error('클라우드 업로드 실패: ' + (result.error?.message || '알 수 없는 오류'));
@@ -40,7 +42,7 @@ function useCloudSync(devices, setDevices) {
     } finally {
       setIsSyncing(false);
     }
-  }, [devices, cloudSyncEnabled]);
+  }, [devices, folders, cloudSyncEnabled]);
 
   // 클라우드에서 데이터 다운로드
   const downloadFromCloud = useCallback(async () => {
@@ -55,9 +57,12 @@ function useCloudSync(devices, setDevices) {
       
       if (result.success) {
         setDevices(result.data);
+        if (setFolders && result.folders) {
+          setFolders(result.folders);
+        }
         setLastSyncTime(new Date());
-        toast.success(`클라우드 다운로드 성공! (${result.data.length}개 장비)`);
-        return { success: true, data: result.data };
+        toast.success(`클라우드 다운로드 성공! (${result.data.length}개 장비, ${result.folders?.length || 0}개 폴더)`);
+        return { success: true, data: result.data, folders: result.folders };
       } else {
         toast.error('클라우드 다운로드 실패: ' + (result.error?.message || '알 수 없는 오류'));
         return { success: false, error: result.error };
@@ -68,7 +73,7 @@ function useCloudSync(devices, setDevices) {
     } finally {
       setIsSyncing(false);
     }
-  }, [setDevices, cloudSyncEnabled]);
+  }, [setDevices, setFolders, cloudSyncEnabled]);
 
   // 클라우드와 로컬 데이터 동기화 (업로드 + 다운로드)
   const syncWithCloud = useCallback(async () => {

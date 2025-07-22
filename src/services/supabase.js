@@ -28,7 +28,7 @@ export const isCloudSyncEnabled = () => {
 };
 
 // 장비 데이터를 Supabase에 저장하는 함수
-export const saveDevicesToCloud = async (devices) => {
+export const saveDevicesToCloud = async (devices, folders = []) => {
   try {
     if (!isCloudSyncEnabled()) {
       console.log('클라우드 동기화가 비활성화되어 있습니다.');
@@ -92,7 +92,33 @@ export const saveDevicesToCloud = async (devices) => {
       return { success: false, error: insertError };
     }
 
-    console.log('클라우드 동기화 성공:', devices.length, '개 장비');
+    // 폴더 데이터도 저장 (folders 테이블이 있는 경우)
+    if (folders && folders.length > 0) {
+      try {
+        // 기존 폴더 데이터 삭제
+        const { error: deleteFoldersError } = await supabase
+          .from('folders')
+          .delete()
+          .neq('id', ''); // 모든 폴더 데이터 삭제
+
+        if (deleteFoldersError) {
+          console.warn('기존 폴더 데이터 삭제 오류:', deleteFoldersError);
+        }
+
+        // 새 폴더 데이터 삽입
+        const { error: insertFoldersError } = await supabase
+          .from('folders')
+          .insert(folders);
+
+        if (insertFoldersError) {
+          console.warn('폴더 데이터 삽입 오류:', insertFoldersError);
+        }
+      } catch (folderError) {
+        console.warn('폴더 동기화 중 오류 (무시됨):', folderError);
+      }
+    }
+
+    console.log('클라우드 동기화 성공:', devices.length, '개 장비,', folders.length, '개 폴더');
     return { success: true };
   } catch (error) {
     console.error('클라우드 동기화 오류:', error);
@@ -100,33 +126,71 @@ export const saveDevicesToCloud = async (devices) => {
   }
 };
 
-// Supabase에서 장비 데이터를 가져오는 함수
+// 클라우드에서 장비 데이터를 로드하는 함수
 export const loadDevicesFromCloud = async () => {
   try {
     if (!isCloudSyncEnabled()) {
       console.log('클라우드 동기화가 비활성화되어 있습니다.');
-      return { success: false, data: [], error: 'Cloud sync disabled' };
+      return { success: false, error: 'Cloud sync disabled' };
     }
 
     if (!supabase) {
       console.log('Supabase 클라이언트가 초기화되지 않았습니다.');
-      return { success: false, data: [], error: 'Supabase client not initialized' };
+      return { success: false, error: 'Supabase client not initialized' };
     }
 
-    const { data, error } = await supabase
+    // 장비 데이터 로드
+    const { data: devices, error: devicesError } = await supabase
       .from('devices')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('클라우드 데이터 로드 오류:', error);
-      return { success: false, data: [], error };
+    if (devicesError) {
+      console.error('장비 데이터 로드 오류:', devicesError);
+      return { success: false, error: devicesError };
     }
 
-    console.log('클라우드에서 데이터 로드 성공:', data.length, '개 장비');
-    return { success: true, data: data || [] };
+    // 폴더 데이터 로드 (folders 테이블이 있는 경우)
+    let folders = [];
+    try {
+      const { data: foldersData, error: foldersError } = await supabase
+        .from('folders')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (foldersError) {
+        console.warn('폴더 데이터 로드 오류 (무시됨):', foldersError);
+      } else {
+        folders = foldersData || [];
+      }
+    } catch (folderError) {
+      console.warn('폴더 테이블 접근 오류 (무시됨):', folderError);
+    }
+
+    // 기본 폴더가 없으면 생성
+    if (!folders.find(f => f.id === 'default')) {
+      folders.unshift({
+        id: 'default',
+        name: '기본 폴더',
+        created_at: new Date().toISOString(),
+        is_expanded: true
+      });
+    }
+
+    // folderId가 없는 장비들을 기본 폴더로 설정
+    const processedDevices = devices.map(device => ({
+      ...device,
+      folderId: device.folderId || 'default'
+    }));
+
+    console.log('클라우드 데이터 로드 성공:', processedDevices.length, '개 장비,', folders.length, '개 폴더');
+    return { 
+      success: true, 
+      data: processedDevices,
+      folders: folders
+    };
   } catch (error) {
     console.error('클라우드 데이터 로드 오류:', error);
-    return { success: false, data: [], error };
+    return { success: false, error };
   }
 }; 
