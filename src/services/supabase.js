@@ -45,6 +45,12 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       return { success: false, error: 'devices 테이블이 존재하지 않습니다.' };
     }
 
+    // 폴더별 장비 매핑 정보를 별도로 저장할 데이터 준비
+    const deviceFolderMapping = devices.map(device => ({
+      deviceId: device.id,
+      folderId: device.folderId || 'default'
+    }));
+
     // 스키마 캐시 문제를 해결하기 위해 folderId를 임시로 제거
     const devicesWithoutFolderId = devices.map(device => {
       const { folderId, ...deviceWithoutFolderId } = device;
@@ -72,7 +78,7 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       return { success: false, error: insertError };
     }
 
-    // 폴더 데이터도 저장 (folders 테이블이 있는 경우)
+    // 폴더 데이터 저장
     if (folders && folders.length > 0) {
       try {
         // 기존 폴더 데이터 삭제
@@ -98,6 +104,30 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       }
     }
 
+    // 장비-폴더 매핑 정보를 별도 테이블에 저장
+    try {
+      // 기존 매핑 데이터 삭제
+      const { error: deleteMappingError } = await supabase
+        .from('device_folder_mapping')
+        .delete()
+        .neq('deviceId', ''); // 모든 매핑 데이터 삭제
+
+      if (deleteMappingError && deleteMappingError.code !== '42P01') {
+        console.warn('기존 매핑 데이터 삭제 오류:', deleteMappingError);
+      }
+
+      // 새 매핑 데이터 삽입
+      const { error: insertMappingError } = await supabase
+        .from('device_folder_mapping')
+        .insert(deviceFolderMapping);
+
+      if (insertMappingError && insertMappingError.code !== '42P01') {
+        console.warn('매핑 데이터 삽입 오류:', insertMappingError);
+      }
+    } catch (mappingError) {
+      console.warn('매핑 데이터 저장 중 오류 (무시됨):', mappingError);
+    }
+
     console.log('클라우드 동기화 성공:', devices.length, '개 장비,', folders.length, '개 폴더');
     return { success: true };
   } catch (error) {
@@ -108,17 +138,11 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
 
 // 클라우드에서 장비 데이터를 로드하는 함수
 export const loadDevicesFromCloud = async () => {
+  if (!isCloudSyncEnabled()) {
+    return { success: false, error: '클라우드 동기화가 비활성화되어 있습니다.' };
+  }
+
   try {
-    if (!isCloudSyncEnabled()) {
-      console.log('클라우드 동기화가 비활성화되어 있습니다.');
-      return { success: false, error: 'Cloud sync disabled' };
-    }
-
-    if (!supabase) {
-      console.log('Supabase 클라이언트가 초기화되지 않았습니다.');
-      return { success: false, error: 'Supabase client not initialized' };
-    }
-
     // 장비 데이터 로드
     const { data: devices, error: devicesError } = await supabase
       .from('devices')
@@ -157,11 +181,33 @@ export const loadDevicesFromCloud = async () => {
       });
     }
 
-    // folderId가 없는 장비들을 기본 폴더로 설정
-    const processedDevices = devices.map(device => ({
-      ...device,
-      folderId: device.folderId || 'default'
-    }));
+    // 장비-폴더 매핑 정보 로드
+    let deviceFolderMapping = [];
+    try {
+      const { data: mappingData, error: mappingError } = await supabase
+        .from('device_folder_mapping')
+        .select('*');
+
+      if (mappingError && mappingError.code !== '42P01') {
+        console.warn('매핑 데이터 로드 오류 (무시됨):', mappingError);
+      } else {
+        deviceFolderMapping = mappingData || [];
+      }
+    } catch (mappingError) {
+      console.warn('매핑 테이블 접근 오류 (무시됨):', mappingError);
+    }
+    
+    // folderId를 다시 추가하여 완전한 데이터 복원
+    const processedDevices = devices.map(device => {
+      // 매핑 정보에서 해당 장비의 폴더 ID 찾기
+      const mapping = deviceFolderMapping.find(m => m.deviceId === device.id);
+      const folderId = mapping ? mapping.folderId : 'default';
+      
+      return {
+        ...device,
+        folderId: folderId
+      };
+    });
 
     console.log('클라우드 데이터 로드 성공:', processedDevices.length, '개 장비,', folders.length, '개 폴더');
     return { 
