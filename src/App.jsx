@@ -144,10 +144,25 @@ function App() {
     setSelectedDevice(device);
   };
 
-  const handleMapClick = (e) => {
+  const handleMapClick = (coordinates) => {
     setEditingDevice(null); // 지도 클릭 시에는 '추가' 모드
-    setNewDevicePosition(e.latlng);
+    
+    // 좌표 데이터 형태에 따라 처리
+    let position;
+    if (Array.isArray(coordinates)) {
+      // 카카오맵, 네이버맵에서 전달되는 형태: [latitude, longitude]
+      position = { lat: coordinates[0], lng: coordinates[1] };
+    } else if (coordinates.latlng) {
+      // Leaflet에서 전달되는 형태: { latlng: { lat, lng } }
+      position = coordinates.latlng;
+    } else {
+      console.error('지도 클릭 좌표 처리 오류:', coordinates);
+      return;
+    }
+    
+    setNewDevicePosition(position);
     setIsModalOpen(true);
+    console.log('지도 클릭 - 새 장비 등록 모달 열기:', position);
   };
 
   const handleEditDevice = (device) => {
@@ -243,7 +258,10 @@ function App() {
     
   // MapContainer 자식으로 들어갈 이벤트 핸들러 컴포넌트
   function MapClickHandler() {
-    useMap().on('click', handleMapClick);
+    useMap().on('click', (e) => {
+      // Leaflet의 경우 e 객체를 그대로 전달
+      handleMapClick(e);
+    });
     return null;
   }
 
