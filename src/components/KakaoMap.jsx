@@ -244,6 +244,9 @@ const KakaoMap = ({
           selectedDevice.longitude
         );
         
+        // 현재 줌 레벨 유지하면서 부드러운 이동
+        const currentZoomLevel = mapInstanceRef.current.getLevel();
+        
         // 카카오맵의 내장 애니메이션 기능 사용 (부드럽고 성능 최적화)
         mapInstanceRef.current.panTo(newPosition, {
           animate: {
@@ -252,17 +255,12 @@ const KakaoMap = ({
           }
         });
         
-        // 줌 레벨도 부드럽게 변경
-        setTimeout(() => {
-          try {
-            mapInstanceRef.current.setLevel(7);
-            setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
-            setCurrentLevel(7);
-            setLocalSelectedDevice(selectedDevice);
-          } catch (error) {
-            console.error('줌 레벨 설정 중 오류:', error);
-          }
-        }, 400); // 이동 애니메이션 중간에 줌 변경
+        // 현재 줌 레벨 유지 (레플렛, 네이버맵과 동일한 동작)
+        setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
+        setLocalSelectedDevice(selectedDevice);
+        
+        // 줌 레벨은 변경하지 않고 현재 상태 유지
+        console.log('카카오맵 이동 완료 - 현재 줌 레벨 유지:', currentZoomLevel);
         
       } catch (error) {
         console.error('장비 선택 이동 중 오류:', error);
