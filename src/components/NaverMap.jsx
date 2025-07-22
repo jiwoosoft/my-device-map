@@ -185,17 +185,17 @@ const NaverMap = ({
       {/* 선택된 장비 팝업 */}
       {displayDevice && (
         <div 
-          className="absolute bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-300 dark:border-gray-600 p-4 max-w-xs"
+          className="absolute bg-gray-100 dark:bg-gray-900 rounded-lg shadow-xl border-2 border-gray-400 dark:border-gray-600 p-4 max-w-xs"
           style={{ 
             zIndex: 10000, 
             position: 'absolute',
             top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: '#ffffff',
+            backgroundColor: '#f3f4f6',
             borderRadius: '12px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)',
-            border: '2px solid #d1d5db',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.2)',
+            border: '2px solid #9ca3af',
             minWidth: '280px'
           }}
         >
@@ -208,21 +208,21 @@ const NaverMap = ({
             ×
           </button>
           
-          <div className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">
+          <div className="text-sm font-bold text-gray-900 dark:text-white mb-2">
             {displayDevice.name}
           </div>
-          <div className="text-xs text-gray-700 dark:text-gray-200 mb-1 font-semibold">
+          <div className="text-xs text-gray-900 dark:text-white mb-1 font-semibold">
             설치일: {displayDevice.installed_at}
           </div>
           {displayDevice.note && (
-            <div className="text-xs text-gray-700 dark:text-gray-200 mb-3 font-medium">
+            <div className="text-xs text-gray-900 dark:text-white mb-3 font-medium">
               비고: {displayDevice.note}
             </div>
           )}
           
           {/* 길안내 버튼들 */}
-          <div className="border-t border-gray-300 dark:border-gray-500 pt-2">
-            <div className="text-xs font-bold text-gray-800 dark:text-gray-100 mb-2">길안내</div>
+          <div className="border-t border-gray-400 dark:border-gray-500 pt-2">
+            <div className="text-xs font-bold text-gray-900 dark:text-white mb-2">길안내</div>
             <div className="flex space-x-2">
               <button
                 onClick={() => onMarkerClick({ ...displayDevice, navigation: 'naver' })}
