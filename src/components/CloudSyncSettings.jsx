@@ -39,12 +39,13 @@ function CloudSyncSettings({ devices, setDevices }) {
 
   return (
     <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-      {/* 제목 */}
+      {/* 제목과 토글을 한 줄에 배치하고 토글을 오른쪽 끝으로 정렬 */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200">
           ☁️ 클라우드 동기화
         </h3>
-        <div className="flex items-center space-x-1">
+        {/* 토글 버튼을 사이드바 오른쪽 끝으로 정렬 */}
+        <div className="flex items-center space-x-1 ml-auto">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           <span className="text-xs text-blue-600 dark:text-blue-300">활성화</span>
         </div>

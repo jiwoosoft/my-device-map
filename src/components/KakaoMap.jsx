@@ -43,13 +43,7 @@ const KakaoMap = ({
       devices.forEach(device => {
         const marker = new window.kakao.maps.Marker({
           position: new window.kakao.maps.LatLng(device.latitude, device.longitude),
-          map,
-          image: new window.kakao.maps.MarkerImage(
-            editingDevice?.id === device.id
-              ? "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png"
-              : "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_black.png",
-            new window.kakao.maps.Size(24, 35)
-          )
+          map
         });
         markersRef.current[device.id] = marker;
 

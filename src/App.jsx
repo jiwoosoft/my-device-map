@@ -251,23 +251,38 @@ function App() {
     <>
       {/* 부모 컨테이너에 relative 속성 추가 */}
       <div className="relative flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden">
-        {/* 사이드바 토글 버튼 */}
-        <button 
-          onClick={toggleSidebar}
-          className={`absolute top-8 z-[1001] p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out toggle-button-mobile ${isSidebarOpen ? 'left-40' : 'left-4'}`}
-          aria-label="Toggle sidebar"
-        >
-          {isSidebarOpen ? '◀' : '▶'}
-        </button>
+        {/* 사이드바 (모바일 반응형 적용) - 토글버튼과 주소검색을 내부로 이동, 모바일 주소창 고려 */}
+        <div className={`absolute top-0 left-0 h-full z-[1001] w-40 bg-white dark:bg-gray-800 p-4 pt-16 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out sidebar-mobile ${isSidebarOpen ? 'translate-x-0 open' : '-translate-x-full'}`}>
+          {/* 토글 버튼을 사이드바 내부로 이동 */}
+          <button 
+            onClick={toggleSidebar}
+            className={`mb-4 p-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-md shadow-lg transition-all duration-300 ease-in-out w-full`}
+            aria-label="Toggle sidebar"
+          >
+            {isSidebarOpen ? '◀' : '▶'}
+          </button>
 
-        {/* 사이드바 (모바일 반응형 적용) */}
-        <div className={`absolute top-0 left-0 h-full z-[1000] w-40 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg transition-transform duration-300 ease-in-out sidebar-mobile ${isSidebarOpen ? 'translate-x-0 open' : '-translate-x-full'}`}>
+          {/* 주소 검색을 사이드바 내부로 이동 (지도 타입이 leaflet이 아닐 때만 표시) */}
+          {mapType !== 'leaflet' && (
+            <div className="mb-4">
+              <AddressSearch onLocationSelect={handleLocationSelect} />
+            </div>
+          )}
+
           {/* 개발자 정보 카드 */}
           <div className="mb-4 p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md developer-card-mobile">
             <div className="text-center">
               <div className="text-white text-xs font-semibold mb-1">개발자</div>
               <div className="text-white text-xs font-bold leading-tight">CHOI HYUN MIN</div>
             </div>
+          </div>
+          
+          {/* 맵선택 메뉴를 사이드바 내부로 이동 */}
+          <div className="mb-4">
+            <MapTypeSelector 
+              mapType={mapType} 
+              onMapTypeChange={handleMapTypeChange} 
+            />
           </div>
           
           {/* 제목의 상단 마진 제거, 중앙 정렬을 위해 부모에 relative 추가 */}
@@ -297,18 +312,8 @@ function App() {
 
         {/* 지도 영역 (모바일 반응형 적용) */}
         <div className="w-full h-full map-container-mobile relative">
-          {/* 지도 타입 선택기 */}
-          <MapTypeSelector 
-            mapType={mapType} 
-            onMapTypeChange={handleMapTypeChange} 
-          />
-
-          {/* 주소 검색 (지도 타입이 leaflet이 아닐 때만 표시) */}
-          {mapType !== 'leaflet' && (
-            <div className="absolute top-4 left-32 z-[1000] w-64">
-              <AddressSearch onLocationSelect={handleLocationSelect} />
-            </div>
-          )}
+          {/* MapTypeSelector 컴포넌트가 이미 사이드바에 포함되어 있으므로 여기서는 제거 */}
+          {/* 주소 검색도 사이드바로 이동했으므로 여기서는 제거 */}
 
           {/* 지도 렌더링 */}
           {mapType === 'leaflet' && (

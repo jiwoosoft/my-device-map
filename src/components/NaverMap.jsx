@@ -68,9 +68,10 @@ const NaverMap = ({
         position: new window.naver.maps.LatLng(device.latitude, device.longitude),
         map: mapInstance,
         icon: {
-          content: `<div style="width: 24px; height: 35px; background: ${
-            editingDevice?.id === device.id ? '#ff0000' : '#000000'
-          }; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); margin: -17px -12px;"></div>`,
+          content: `<svg width="24" height="35" viewBox="0 0 24 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 8.5 12 23 12 23s12-14.5 12-23c0-6.63-5.37-12-12-12z" fill="${editingDevice?.id === device.id ? '#ff0000' : '#3b82f6'}"/>
+            <circle cx="12" cy="12" r="6" fill="white"/>
+          </svg>`,
           size: new window.naver.maps.Size(24, 35),
           anchor: new window.naver.maps.Point(12, 35)
         }
