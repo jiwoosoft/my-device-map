@@ -185,7 +185,7 @@ const NaverMap = ({
       {/* 선택된 장비 팝업 */}
       {displayDevice && (
         <div 
-          className="absolute bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-3 max-w-xs"
+          className="absolute bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-300 dark:border-gray-500 p-4 max-w-xs"
           style={{ 
             zIndex: 10000, 
             position: 'absolute',
@@ -193,10 +193,11 @@ const NaverMap = ({
             left: '50%',
             transform: 'translateX(-50%)',
             backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-            border: '1px solid #e5e7eb',
-            minWidth: '250px'
+            borderRadius: '12px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
+            border: '2px solid #d1d5db',
+            minWidth: '280px',
+            backdropFilter: 'blur(10px)'
           }}
         >
           {/* 닫기 버튼 */}
@@ -208,37 +209,37 @@ const NaverMap = ({
             ×
           </button>
           
-          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+          <div className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
             {displayDevice.name}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <div className="text-xs text-gray-700 dark:text-gray-300 mb-1 font-medium">
             설치일: {displayDevice.installed_at}
           </div>
           {displayDevice.note && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            <div className="text-xs text-gray-700 dark:text-gray-300 mb-3">
               비고: {displayDevice.note}
             </div>
           )}
           
           {/* 길안내 버튼들 */}
           <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
-            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">길안내</div>
+            <div className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-2">길안내</div>
             <div className="flex space-x-2">
               <button
                 onClick={() => onMarkerClick({ ...displayDevice, navigation: 'naver' })}
-                className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                className="px-3 py-2 text-xs font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
               >
                 네이버
               </button>
               <button
                 onClick={() => onMarkerClick({ ...displayDevice, navigation: 'kakao' })}
-                className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+                className="px-3 py-2 text-xs font-bold bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors shadow-md"
               >
                 카카오
               </button>
               <button
                 onClick={() => onMarkerClick({ ...displayDevice, navigation: 'tmap' })}
-                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                className="px-3 py-2 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
               >
                 TMAP
               </button>
