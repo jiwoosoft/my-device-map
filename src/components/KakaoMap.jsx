@@ -356,30 +356,30 @@ const KakaoMap = ({
       
       {/* 선택된 장비 팝업 */}
       {displayDevice && (
-        <div 
-          className="absolute bg-gray-200 dark:bg-gray-900 rounded-lg shadow-xl border-2 border-gray-500 dark:border-gray-600 p-4 max-w-xs"
-          style={{ 
-            zIndex: 10000, 
+        <div
+          className="absolute bg-gray-200 dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-500 dark:border-gray-600 p-4 max-w-xs"
+          style={{
+            zIndex: 10000,
             position: 'absolute',
             top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: '#e5e7eb',
+            backgroundColor: 'var(--tw-bg-opacity, 1)',
             borderRadius: '12px',
             boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.3)',
-            border: '3px solid #6b7280',
+            border: '3px solid var(--tw-border-opacity, 1)',
             minWidth: '280px'
           }}
         >
           {/* 닫기 버튼 */}
-          <button 
+          <button
             onClick={closeInfoWindow}
             className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-lg font-bold"
             aria-label="닫기"
           >
             ×
           </button>
-          
+
           <div className="text-sm font-bold text-gray-900 dark:text-white mb-2">
             {displayDevice.name}
           </div>
