@@ -372,21 +372,22 @@ function App() {
             />
           </div>
           
-          {/* 제목의 상단 마진 제거, 중앙 정렬을 위해 부모에 relative 추가 */}
-          <div className="relative flex justify-start items-center mb-4">
+          {/* 제목과 테마 토글 버튼 */}
+          <div className="relative flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white">장비목록</h2>
-            {/* 테마 토글 버튼 (오른쪽으로 절대 위치) */}
-            <button onClick={toggleTheme} className="absolute right-0 p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+            {/* 테마 토글 버튼 */}
+            <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
           </div>
           
           {/* 클라우드 동기화 설정 */}
-          <div className="cloud-sync-mobile" style={{display: 'block', visibility: 'visible', opacity: 1}}>
+          <div className="cloud-sync-mobile mb-4" style={{display: 'block', visibility: 'visible', opacity: 1}}>
             <CloudSyncSettings devices={devices} setDevices={setDevices} />
           </div>
           
-          <div className="device-list-mobile">
+          {/* 장비 목록 (검색 기능 포함) */}
+          <div className="device-list-mobile flex-1">
             <DeviceList
               devices={devices}
               selectedDevice={selectedDevice}
