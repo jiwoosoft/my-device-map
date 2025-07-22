@@ -357,19 +357,18 @@ const KakaoMap = ({
       {/* 선택된 장비 팝업 */}
       {displayDevice && (
         <div 
-          className="absolute bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-300 dark:border-gray-500 p-4 max-w-xs"
+          className="absolute bg-white dark:bg-gray-900 rounded-lg shadow-2xl border-2 border-gray-400 dark:border-gray-600 p-4 max-w-xs"
           style={{ 
             zIndex: 10000, 
             position: 'absolute',
             top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: 'white',
+            backgroundColor: '#ffffff',
             borderRadius: '12px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
-            border: '2px solid #d1d5db',
-            minWidth: '280px',
-            backdropFilter: 'blur(10px)'
+            boxShadow: '0 25px 50px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.2)',
+            border: '3px solid #9ca3af',
+            minWidth: '280px'
           }}
         >
           {/* 닫기 버튼 */}
@@ -381,20 +380,20 @@ const KakaoMap = ({
             ×
           </button>
           
-          <div className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="text-sm font-bold text-black dark:text-white mb-2">
             {displayDevice.name}
           </div>
-          <div className="text-xs text-gray-700 dark:text-gray-300 mb-1 font-medium">
+          <div className="text-xs text-black dark:text-white mb-1 font-semibold">
             설치일: {displayDevice.installed_at}
           </div>
           {displayDevice.note && (
-            <div className="text-xs text-gray-700 dark:text-gray-300 mb-3">
+            <div className="text-xs text-black dark:text-white mb-3 font-medium">
               비고: {displayDevice.note}
             </div>
           )}
           {/* 길안내 버튼들 */}
-          <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
-            <div className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-2">길안내</div>
+          <div className="border-t border-gray-300 dark:border-gray-500 pt-2">
+            <div className="text-xs font-bold text-black dark:text-white mb-2">길안내</div>
             <div className="flex space-x-2">
               <button
                 onClick={() => onMarkerClick({ ...displayDevice, navigation: 'naver' })}
