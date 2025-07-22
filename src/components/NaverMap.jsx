@@ -192,10 +192,10 @@ const NaverMap = ({
             top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: 'var(--tw-bg-opacity, 1)',
+            backgroundColor: 'rgba(229, 231, 235, 0.9)', // 밝은 회색, 90% 불투명
             borderRadius: '12px',
             boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.3)',
-            border: '3px solid var(--tw-border-opacity, 1)',
+            border: '3px solid #6b7280',
             minWidth: '280px'
           }}
         >
