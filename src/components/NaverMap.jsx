@@ -13,9 +13,12 @@ const NaverMap = ({
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState({});
+  const [localSelectedDevice, setLocalSelectedDevice] = useState(null); // 로컬 선택된 장비 상태
+  const [currentCenter, setCurrentCenter] = useState(initialPosition); // 현재 지도 중심 위치
 
   // 네이버맵 초기화
   useEffect(() => {
+    console.log('네이버맵 스크립트 로드 시작');
     // 네이버맵 스크립트 로드 (새로운 API 방식)
     const script = document.createElement('script');
     script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${import.meta.env.VITE_NAVER_CLIENT_ID || 'kqcolemxuh'}`;
@@ -35,9 +38,10 @@ const NaverMap = ({
 
   // 네이버맵 초기화 함수
   const initializeMap = () => {
+    console.log('네이버맵 초기화 함수 실행');
     if (window.naver && mapRef.current) {
       const mapOptions = {
-        center: new window.naver.maps.LatLng(initialPosition[0], initialPosition[1]),
+        center: new window.naver.maps.LatLng(currentCenter[0], currentCenter[1]),
         zoom: 13,
         zoomControl: true,
         zoomControlOptions: {
@@ -52,15 +56,25 @@ const NaverMap = ({
       window.naver.maps.Event.addListener(mapInstance, 'click', (e) => {
         const latlng = e.coord;
         onMapClick([latlng.lat(), latlng.lng()]);
+        // 지도 클릭 시 정보창 닫기
+        setLocalSelectedDevice(null);
+      });
+
+      // 지도 중심 변경 이벤트 등록
+      window.naver.maps.Event.addListener(mapInstance, 'center_changed', () => {
+        const center = mapInstance.getCenter();
+        setCurrentCenter([center.lat(), center.lng()]);
       });
 
       // 마커 생성
       createMarkers(mapInstance);
+      console.log('네이버맵 초기화 완료');
     }
   };
 
   // 마커 생성 함수
   const createMarkers = (mapInstance) => {
+    console.log('네이버맵 마커 생성 시작, devices:', devices);
     const newMarkers = {};
     
     devices.forEach((device) => {
@@ -79,6 +93,10 @@ const NaverMap = ({
 
       // 마커 클릭 이벤트
       window.naver.maps.Event.addListener(marker, 'click', () => {
+        console.log('네이버맵 마커 클릭됨:', device);
+        // 로컬 상태 업데이트
+        setLocalSelectedDevice(device);
+        // 부모 컴포넌트에도 알림
         onMarkerClick(device);
       });
 
@@ -95,11 +113,13 @@ const NaverMap = ({
     });
 
     setMarkers(newMarkers);
+    console.log('네이버맵 마커 생성 완료');
   };
 
   // 마커 업데이트 (devices 변경 시)
   useEffect(() => {
     if (map) {
+      console.log('네이버맵 마커 업데이트');
       // 기존 마커 제거
       Object.values(markers).forEach(marker => {
         marker.setMap(null);
@@ -110,57 +130,115 @@ const NaverMap = ({
     }
   }, [devices, editingDevice]);
 
-  // 지도 크기 재조정 (사이드바 토글 시)
+  // 선택된 장비가 변경될 때 지도를 해당 위치로 이동
+  useEffect(() => {
+    if (selectedDevice && map) {
+      console.log('네이버맵 선택된 장비로 이동:', selectedDevice);
+      const newPosition = new window.naver.maps.LatLng(
+        selectedDevice.latitude, 
+        selectedDevice.longitude
+      );
+      
+      // 부드러운 이동 애니메이션으로 해당 위치로 이동
+      map.panTo(newPosition);
+      // 현재 중심 위치 업데이트
+      setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
+      // 로컬 상태도 업데이트
+      setLocalSelectedDevice(selectedDevice);
+    }
+  }, [selectedDevice, map]);
+
+  // 지도 크기 재조정 (사이드바 토글 시) - 현재 위치 유지
   useEffect(() => {
     if (map) {
       const resizeMap = () => {
-        map.refresh();
+        // 지도 리사이즈 후 현재 중심 위치로 복원
+        const center = new window.naver.maps.LatLng(currentCenter[0], currentCenter[1]);
+        map.setCenter(center);
+        console.log('네이버맵 리사이즈 후 위치 복원:', currentCenter);
       };
       
       const timer = setTimeout(resizeMap, 300);
       return () => clearTimeout(timer);
     }
-  }, [map]);
+  }, [map, currentCenter]);
+
+  // 정보창 닫기 함수
+  const closeInfoWindow = () => {
+    console.log('네이버맵 정보창 닫기');
+    setLocalSelectedDevice(null);
+  };
+
+  // 표시할 장비 결정 (로컬 상태 우선, 없으면 부모 상태 사용)
+  const displayDevice = localSelectedDevice || selectedDevice;
+
+  console.log('네이버맵 렌더링 - displayDevice:', displayDevice);
 
   return (
     <div className="w-full h-full relative">
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
       
       {/* 선택된 장비 팝업 */}
-      {selectedDevice && (
-        <div className="absolute top-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-3 z-10">
-          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {selectedDevice.name}
+      {displayDevice && (
+        <div 
+          className="absolute bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-3 max-w-xs"
+          style={{ 
+            zIndex: 10000, 
+            position: 'absolute',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+            border: '1px solid #e5e7eb',
+            minWidth: '250px'
+          }}
+        >
+          {/* 닫기 버튼 */}
+          <button 
+            onClick={closeInfoWindow}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-lg font-bold"
+            aria-label="닫기"
+          >
+            ×
+          </button>
+          
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+            {displayDevice.name}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {selectedDevice.installed_at}
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            설치일: {displayDevice.installed_at}
           </div>
-          {selectedDevice.note && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {selectedDevice.note}
+          {displayDevice.note && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              비고: {displayDevice.note}
             </div>
           )}
           
           {/* 길안내 버튼들 */}
-          <div className="flex space-x-2 mt-3">
-            <button
-              onClick={() => onMarkerClick({ ...selectedDevice, navigation: 'naver' })}
-              className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-            >
-              네이버
-            </button>
-            <button
-              onClick={() => onMarkerClick({ ...selectedDevice, navigation: 'kakao' })}
-              className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
-            >
-              카카오
-            </button>
-            <button
-              onClick={() => onMarkerClick({ ...selectedDevice, navigation: 'tmap' })}
-              className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              TMAP
-            </button>
+          <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
+            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">길안내</div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => onMarkerClick({ ...displayDevice, navigation: 'naver' })}
+                className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              >
+                네이버
+              </button>
+              <button
+                onClick={() => onMarkerClick({ ...displayDevice, navigation: 'kakao' })}
+                className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+              >
+                카카오
+              </button>
+              <button
+                onClick={() => onMarkerClick({ ...displayDevice, navigation: 'tmap' })}
+                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                TMAP
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -191,3 +191,47 @@
   width: 100% !important;
   height: auto !important;
 } 
+
+/* 카카오맵 줌 컨트롤 개선 */
+.kakao-map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 카카오맵 줌 컨트롤 스타일 개선 */
+.kakao-map-container .kakao-map {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 줌 컨트롤 버튼 스타일 */
+.kakao-map-container .kakao-map .kakao-map-zoom-control {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 1000 !important;
+}
+
+/* 마우스 휠 줌 개선 */
+.kakao-map-container .kakao-map {
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 모바일 줌 개선 */
+@media (max-width: 768px) {
+  .kakao-map-container .kakao-map {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+}
+
+/* 줌 이벤트 충돌 방지 */
+.kakao-map-container {
+  pointer-events: auto;
+}
+
+.kakao-map-container * {
+  pointer-events: auto;
+} 
