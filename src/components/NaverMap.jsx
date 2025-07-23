@@ -179,11 +179,12 @@ const NaverMap = ({
   useEffect(() => {
     if (map && isMapInitialized) {
       try {
+        // 'satellite' 뷰 요청 시 'HYBRID' 뷰를 사용하도록 변경
         const mapTypeId = mapViewType === 'satellite'
-          ? window.naver.maps.MapTypeId.SATELLITE
+          ? window.naver.maps.MapTypeId.HYBRID
           : window.naver.maps.MapTypeId.NORMAL;
         map.setMapTypeId(mapTypeId);
-        console.log(`네이버맵 뷰 변경: ${mapViewType}`);
+        console.log(`네이버맵 뷰 변경: ${mapViewType === 'satellite' ? 'HYBRID' : 'NORMAL'}`);
       } catch (error) {
         console.error('네이버맵 뷰 변경 오류:', error);
       }
