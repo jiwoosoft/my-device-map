@@ -12,7 +12,8 @@ const KakaoMap = ({
   selectedDevice,
   editingDevice,
   onMarkerDragEnd,
-  shouldMaxZoom // 추가된 prop
+  shouldMaxZoom, // 추가된 prop
+  mapViewType // 추가된 prop
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null); // 지도 인스턴스 저장
@@ -119,7 +120,8 @@ const KakaoMap = ({
           scrollwheel: true, // 마우스 휠 줌 활성화
           draggable: true,   // 드래그 활성화
           zoomable: true,    // 줌 활성화
-          keyboardShortcuts: false // 키보드 단축키 비활성화 (충돌 방지)
+          keyboardShortcuts: false, // 키보드 단축키 비활성화 (충돌 방지)
+          mapTypeId: window.kakao.maps.MapTypeId.ROADMAP // 기본 지도 타입 설정
         });
         mapInstanceRef.current = map;
 
@@ -293,6 +295,21 @@ const KakaoMap = ({
       return () => clearTimeout(timer);
     }
   }, [currentCenter, currentLevel, isMapInitialized]);
+
+  // 지도 뷰 타입 변경 처리
+  useEffect(() => {
+    if (mapInstanceRef.current && isMapInitialized) {
+      try {
+        const mapTypeId = mapViewType === 'satellite' 
+          ? window.kakao.maps.MapTypeId.HYBRID 
+          : window.kakao.maps.MapTypeId.ROADMAP;
+        mapInstanceRef.current.setMapTypeId(mapTypeId);
+        console.log(`카카오맵 뷰 변경: ${mapViewType}`);
+      } catch (error) {
+        console.error('카카오맵 뷰 변경 오류:', error);
+      }
+    }
+  }, [mapViewType, isMapInitialized]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {

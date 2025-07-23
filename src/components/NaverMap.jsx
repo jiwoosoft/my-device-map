@@ -9,13 +9,15 @@ const NaverMap = ({
   selectedDevice,
   editingDevice,
   onMarkerDragEnd,
-  shouldMaxZoom // 추가된 prop
+  shouldMaxZoom, // 추가된 prop
+  mapViewType // 추가된 prop
 }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState({});
   const [localSelectedDevice, setLocalSelectedDevice] = useState(null); // 로컬 선택된 장비 상태
   const [currentCenter, setCurrentCenter] = useState(initialPosition); // 현재 지도 중심 위치
+  const [isMapInitialized, setIsMapInitialized] = useState(false); // 지도 초기화 상태 추적
 
   // 네이버맵 초기화
   useEffect(() => {
@@ -69,6 +71,7 @@ const NaverMap = ({
 
       // 마커 생성
       createMarkers(mapInstance);
+      setIsMapInitialized(true); // 지도 초기화 완료
       console.log('네이버맵 초기화 완료');
     }
   };
@@ -171,6 +174,21 @@ const NaverMap = ({
       return () => clearTimeout(timer);
     }
   }, [map, currentCenter]);
+
+  // 지도 뷰 타입 변경 처리
+  useEffect(() => {
+    if (map && isMapInitialized) {
+      try {
+        const mapTypeId = mapViewType === 'satellite'
+          ? window.naver.maps.MapTypeId.SATELLITE
+          : window.naver.maps.MapTypeId.NORMAL;
+        map.setMapTypeId(mapTypeId);
+        console.log(`네이버맵 뷰 변경: ${mapViewType}`);
+      } catch (error) {
+        console.error('네이버맵 뷰 변경 오류:', error);
+      }
+    }
+  }, [mapViewType, isMapInitialized, map]);
 
   // 정보창 닫기 함수
   const closeInfoWindow = () => {

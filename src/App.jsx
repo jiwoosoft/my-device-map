@@ -89,6 +89,7 @@ function App() {
 
   // 새로운 지도 관련 상태
   const [mapType, setMapType] = useLocalStorage('mapType', 'leaflet'); // 지도 타입 (leaflet, kakao, naver)
+  const [mapViewType, setMapViewType] = useLocalStorage('mapViewType', 'normal'); // 지도 뷰 타입 (normal, satellite)
   const [searchLocation, setSearchLocation] = useState(null); // 주소 검색으로 선택된 위치
 
   // 테마 변경 시 HTML 루트 요소에 'dark' 클래스를 토글합니다.
@@ -409,6 +410,11 @@ function App() {
     return null;
   }
 
+  // 지도 뷰 타입 변경 핸들러
+  const toggleMapViewType = () => {
+    setMapViewType(prev => prev === 'normal' ? 'satellite' : 'normal');
+  };
+
   return (
     <>
       {/* 부모 컨테이너에 relative 속성 추가 */}
@@ -484,9 +490,14 @@ function App() {
 
         {/* 지도 영역 (모바일 반응형 적용) */}
         <div className="w-full h-full map-container-mobile relative">
-          {/* MapTypeSelector 컴포넌트가 이미 사이드바에 포함되어 있으므로 여기서는 제거 */}
-          {/* 주소 검색도 사이드바로 이동했으므로 여기서는 제거 */}
-
+          {/* 위성/일반 뷰 전환 버튼 */}
+          <button
+            onClick={toggleMapViewType}
+            className="absolute top-4 right-4 z-[1000] px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-semibold"
+          >
+            {mapViewType === 'normal' ? '🛰️ 위성' : '🗺️ 일반'}
+          </button>
+          
           {/* 지도 렌더링 */}
           {mapType === 'leaflet' && (
             <MapContainer
@@ -497,10 +508,17 @@ function App() {
               zoomControl={false}
             >
               <ZoomControl position="topright" />
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
+              {mapViewType === 'satellite' ? (
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                />
+              ) : (
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+              )}
               {devices.map(device => {
                 const isEditing = editingDevice && editingDevice.id === device.id;
                 const currentMarkerPosition = isEditing && updatedPosition 
