@@ -589,6 +589,7 @@ function App() {
               editingDevice={editingDevice}
               onMarkerDragEnd={handleMarkerDragEnd}
               shouldMaxZoom={selectedDevice?.id?.toString().startsWith('temp-')}
+              mapViewType={mapViewType} // 이 prop을 추가하여 상태 전달
             />
           )}
 
@@ -603,6 +604,7 @@ function App() {
               editingDevice={editingDevice}
               onMarkerDragEnd={handleMarkerDragEnd}
               shouldMaxZoom={selectedDevice?.id?.toString().startsWith('temp-')}
+              mapViewType={mapViewType} // 이 prop을 추가하여 상태 전달
             />
           )}
         </div>
