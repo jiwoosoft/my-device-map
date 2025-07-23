@@ -56,26 +56,43 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       return { success: false, error: deleteError };
     }
 
-    // folderId를 제거한 데이터로 변환 (스키마 캐시 문제 해결 전까지)
-    const devicesWithoutFolderId = devices.map(device => {
-      const { folderId, ...deviceWithoutFolderId } = device;
-      return deviceWithoutFolderId;
-    });
-
-    // 변환된 데이터 삽입
+    // folderId를 포함한 데이터 삽입 (스키마 문제 해결됨)
     const { error: insertError } = await supabase
       .from('devices')
-      .insert(devicesWithoutFolderId);
+      .insert(devices);
 
     if (insertError) {
       console.error('데이터 삽입 오류:', insertError);
       return { success: false, error: insertError };
     }
 
-    // 폴더 동기화는 로컬에서만 사용 (스키마 캐시 문제 해결 전까지)
-    console.log('⚠️ 폴더 동기화는 로컬에서만 사용됩니다. 스키마 캐시 문제 해결 후 재활성화됩니다.');
+    // 폴더 데이터 저장 (스키마 문제 해결됨)
+    if (folders && folders.length > 0) {
+      try {
+        // 기존 폴더 데이터 삭제
+        const { error: deleteFoldersError } = await supabase
+          .from('folders')
+          .delete()
+          .neq('id', ''); // 모든 폴더 데이터 삭제
 
-    console.log('클라우드 동기화 성공:', devices.length, '개 장비');
+        if (deleteFoldersError) {
+          console.warn('기존 폴더 데이터 삭제 오류:', deleteFoldersError);
+        }
+
+        // 새 폴더 데이터 삽입
+        const { error: insertFoldersError } = await supabase
+          .from('folders')
+          .insert(folders);
+
+        if (insertFoldersError) {
+          console.warn('폴더 데이터 삽입 오류:', insertFoldersError);
+        }
+      } catch (folderError) {
+        console.warn('폴더 동기화 중 오류 (무시됨):', folderError);
+      }
+    }
+
+    console.log('클라우드 동기화 성공:', devices.length, '개 장비,', folders.length, '개 폴더');
     return { success: true };
   } catch (error) {
     console.error('클라우드 동기화 오류:', error);
@@ -101,24 +118,53 @@ export const loadDevicesFromCloud = async () => {
       return { success: false, error: devicesError };
     }
 
-    // 폴더 동기화는 로컬에서만 사용 (스키마 캐시 문제 해결 전까지)
-    console.log('⚠️ 폴더 동기화는 로컬에서만 사용됩니다. 스키마 캐시 문제 해결 후 재활성화됩니다.');
-    
-    // 기본 폴더만 제공
-    const folders = [{
-      id: 'default',
-      name: '기본 폴더',
-      created_at: new Date().toISOString(),
-      is_expanded: true
-    }];
+    // 폴더 데이터 로드 (스키마 문제 해결됨)
+    let folders = [];
+    try {
+      const { data: foldersData, error: foldersError } = await supabase
+        .from('folders')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-    // 모든 장비를 기본 폴더로 설정
+      if (foldersError) {
+        console.warn('폴더 데이터 로드 오류 (무시됨):', foldersError);
+        // 폴더 로드 실패 시 기본 폴더만 제공
+        folders = [{
+          id: 'default',
+          name: '기본 폴더',
+          created_at: new Date().toISOString(),
+          is_expanded: true
+        }];
+      } else {
+        folders = foldersData || [];
+        // 기본 폴더가 없으면 생성
+        if (!folders.find(f => f.id === 'default')) {
+          folders.unshift({
+            id: 'default',
+            name: '기본 폴더',
+            created_at: new Date().toISOString(),
+            is_expanded: true
+          });
+        }
+      }
+    } catch (folderError) {
+      console.warn('폴더 테이블 접근 오류 (무시됨):', folderError);
+      // 폴더 접근 실패 시 기본 폴더만 제공
+      folders = [{
+        id: 'default',
+        name: '기본 폴더',
+        created_at: new Date().toISOString(),
+        is_expanded: true
+      }];
+    }
+
+    // folderId가 없는 장비들을 기본 폴더로 설정
     const processedDevices = devices.map(device => ({
       ...device,
-      folderId: 'default'
+      folderId: device.folderId || 'default'
     }));
 
-    console.log('클라우드 데이터 로드 성공:', processedDevices.length, '개 장비');
+    console.log('클라우드 데이터 로드 성공:', processedDevices.length, '개 장비,', folders.length, '개 폴더');
     return { 
       success: true, 
       data: processedDevices,
