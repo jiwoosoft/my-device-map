@@ -510,8 +510,9 @@ function App() {
               <ZoomControl position="topright" />
               {mapViewType === 'satellite' ? (
                 <TileLayer
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                  attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                  url="https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"
+                  subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                  attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
                 />
               ) : (
                 <TileLayer
