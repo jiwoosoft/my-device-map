@@ -17,7 +17,7 @@ const DeviceFormModal = ({ device, folders, onClose, onSave, onCreateFolder }) =
       setName(device.name);
       setInstalledAt(device.installed_at);
       setNote(device.note);
-      setSelectedFolderId(device.folderId || 'default');
+      setSelectedFolderId(device.folderid || 'default');
     } else {
       // '추가' 모드일 때 폼을 초기화합니다.
       setName('');
@@ -37,7 +37,7 @@ const DeviceFormModal = ({ device, folders, onClose, onSave, onCreateFolder }) =
       name, 
       installed_at: installedAt, 
       note, 
-      folderId: selectedFolderId 
+      folderid: selectedFolderId 
     });
   };
 

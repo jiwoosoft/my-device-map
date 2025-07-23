@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 환경 변수에서 Supabase 설정을 가져옵니다
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://prtjnukbuubeckxxgnuk.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydGpudWtidXViZWNreHhnbnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MjIxMzIsImV4cCI6MjA2ODQ5ODEzMn0.mPFuIdEIKqjSngh-D3AebgG5mE5w9PeIzqQgtIngajo';
+// 환경 변수에서 Supabase 설정을 가져옵니다 (임시로 하드코딩)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://uokpvvejuuftspshatgh.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVva3B2dmVqdXVmdHNwc2hhdGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNzA5MTksImV4cCI6MjA2ODg0NjkxOX0.AUjjDZlphAWjgaJeWZ_-8I7ZogrsUB4DWdc5z0-Cgjk';
 
 console.log('🔧 Supabase 설정 확인:');
 console.log('  URL:', supabaseUrl);
 console.log('  Key 길이:', supabaseAnonKey ? supabaseAnonKey.length : 0);
+console.log('  전체 환경 변수:', import.meta.env);
 
-// Supabase 클라이언트 생성
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase 클라이언트 생성 (환경 변수가 있을 때만)
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // 클라우드 동기화가 활성화되어 있는지 확인하는 함수
 export const isCloudSyncEnabled = () => {
@@ -29,7 +32,7 @@ export const isCloudSyncEnabled = () => {
 
 // 장비 데이터를 Supabase에 저장하는 함수
 export const saveDevicesToCloud = async (devices, folders = []) => {
-  if (!isCloudSyncEnabled()) {
+  if (!isCloudSyncEnabled() || !supabase) {
     return { success: false, error: '클라우드 동기화가 비활성화되어 있습니다.' };
   }
 
@@ -56,7 +59,7 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       return { success: false, error: deleteError };
     }
 
-    // folderId를 포함한 데이터 삽입 (스키마 문제 해결됨)
+    // folderid를 포함한 데이터 삽입 (스키마 문제 해결됨)
     const { error: insertError } = await supabase
       .from('devices')
       .insert(devices);
@@ -79,10 +82,15 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
           console.warn('기존 폴더 데이터 삭제 오류:', deleteFoldersError);
         }
 
-        // 새 폴더 데이터 삽입
+        // 새 폴더 데이터 삽입 (필요한 필드만 선택)
+        const cleanFolders = folders.map(folder => ({
+          id: folder.id,
+          name: folder.name
+        }));
+        
         const { error: insertFoldersError } = await supabase
           .from('folders')
-          .insert(folders);
+          .insert(cleanFolders);
 
         if (insertFoldersError) {
           console.warn('폴더 데이터 삽입 오류:', insertFoldersError);
@@ -102,7 +110,7 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
 
 // 클라우드에서 장비 데이터를 로드하는 함수
 export const loadDevicesFromCloud = async () => {
-  if (!isCloudSyncEnabled()) {
+  if (!isCloudSyncEnabled() || !supabase) {
     return { success: false, error: '클라우드 동기화가 비활성화되어 있습니다.' };
   }
 
@@ -158,10 +166,10 @@ export const loadDevicesFromCloud = async () => {
       }];
     }
 
-    // folderId가 없는 장비들을 기본 폴더로 설정
+    // folderid가 없는 장비들을 기본 폴더로 설정
     const processedDevices = devices.map(device => ({
       ...device,
-      folderId: device.folderId || 'default'
+      folderid: device.folderid || 'default'
     }));
 
     console.log('클라우드 데이터 로드 성공:', processedDevices.length, '개 장비,', folders.length, '개 폴더');

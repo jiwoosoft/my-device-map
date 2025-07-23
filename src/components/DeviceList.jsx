@@ -77,7 +77,7 @@ const DeviceList = ({
   const devicesByFolder = useMemo(() => {
     const grouped = {};
     folders.forEach(folder => {
-      grouped[folder.id] = devices.filter(device => device.folderId === folder.id);
+      grouped[folder.id] = devices.filter(device => device.folderid === folder.id);
     });
     return grouped;
   }, [devices, folders]);
@@ -124,7 +124,7 @@ const DeviceList = ({
 
   const renderDeviceItem = (device, showFolder = false) => {
     const isSelected = selectedDevice && selectedDevice.id === device.id;
-    const folder = folders.find(f => f.id === device.folderId);
+    const folder = folders.find(f => f.id === device.folderid);
     
     return (
       <li

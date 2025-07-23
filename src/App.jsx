@@ -53,7 +53,7 @@ function App() {
     {
       id: 'default',
       name: '기본 폴더',
-      createdAt: new Date().toISOString(),
+      createdat: new Date().toISOString(),
       isExpanded: true
     }
   ]);
@@ -98,11 +98,11 @@ function App() {
     }
   }, [theme]);
 
-  // 기존 장비 데이터에 folderId 필드 추가 (마이그레이션)
+  // 기존 장비 데이터에 folderid 필드 추가 (마이그레이션)
   useEffect(() => {
     const updatedDevices = devices.map(device => {
-      if (!device.folderId) {
-        return { ...device, folderId: 'default' };
+      if (!device.folderid) {
+        return { ...device, folderid: 'default' };
       }
       return device;
     });
@@ -354,7 +354,7 @@ function App() {
     const newFolder = {
       id: `folder_${Date.now()}`,
       name: folderName,
-      createdAt: new Date().toISOString(),
+      createdat: new Date().toISOString(),
       isExpanded: true
     };
     setFolders(prev => [...prev, newFolder]);
@@ -373,8 +373,8 @@ function App() {
     // 폴더를 삭제할 때 해당 폴더의 장비들을 기본 폴더로 이동
     setDevices(prev => 
       prev.map(device => 
-        device.folderId === folderId 
-          ? { ...device, folderId: 'default' }
+        device.folderid === folderId 
+          ? { ...device, folderid: 'default' }
           : device
       )
     );
