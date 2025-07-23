@@ -66,12 +66,26 @@ git clone https://github.com/jiwoosoft/my-device-map.git
 cd my-device-map
 ```
 
-2. **의존성 설치**
+2. **환경변수 설정**
+```bash
+# .env.example 파일을 .env로 복사
+cp .env.example .env
+
+# .env 파일을 열어서 실제 API 키들을 입력
+# - VITE_SUPABASE_URL: Supabase 프로젝트 URL
+# - VITE_SUPABASE_ANON_KEY: Supabase 익명 키
+# - VITE_KAKAO_MAP_API_KEY: 카카오맵 API 키
+# - VITE_KAKAO_REST_API_KEY: 카카오 REST API 키
+# - VITE_NAVER_CLIENT_ID: 네이버 클라이언트 ID
+# - VITE_NAVER_CLIENT_SECRET: 네이버 클라이언트 시크릿
+```
+
+3. **의존성 설치**
 ```bash
 npm install
 ```
 
-3. **개발 서버 실행**
+4. **개발 서버 실행**
 ```bash
 npm run dev
 ```
@@ -80,6 +94,30 @@ npm run dev
 ```
 http://localhost:5173
 ```
+
+### 🔑 API 키 발급 방법
+
+#### Supabase 설정
+1. [Supabase](https://supabase.com)에서 새 프로젝트 생성
+2. Settings > API에서 URL과 anon key 복사
+3. `.env` 파일에 입력
+
+#### Kakao API 설정
+1. [Kakao Developers](https://developers.kakao.com)에서 애플리케이션 생성
+2. **JavaScript 키**를 `VITE_KAKAO_MAP_API_KEY`에 입력
+3. **REST API 키**를 `VITE_KAKAO_REST_API_KEY`에 입력
+4. 플랫폼 > Web에서 도메인 등록 (localhost:5173, 배포 URL)
+
+#### Naver API 설정
+1. [Naver Cloud Platform](https://www.ncloud.com)에서 애플리케이션 생성
+2. **Client ID**를 `VITE_NAVER_CLIENT_ID`에 입력
+3. **Client Secret**를 `VITE_NAVER_CLIENT_SECRET`에 입력
+4. 서비스 환경 > Web에서 도메인 등록
+
+### ⚠️ 보안 주의사항
+- **절대 `.env` 파일을 GitHub에 커밋하지 마세요**
+- API 키는 개인적으로 관리하고 공유하지 마세요
+- 프로덕션 환경에서는 환경변수를 안전하게 관리하세요
 
 ### 빌드 및 배포
 
