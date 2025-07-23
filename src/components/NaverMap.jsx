@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // 네이버맵 컴포넌트
-const NaverMap = ({ 
-  devices, 
-  initialPosition, 
-  onMapClick, 
-  onMarkerClick, 
-  selectedDevice, 
+const NaverMap = ({
+  devices,
+  initialPosition,
+  onMapClick,
+  onMarkerClick,
+  selectedDevice,
   editingDevice,
-  onMarkerDragEnd 
+  onMarkerDragEnd,
+  shouldMaxZoom // 추가된 prop
 }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -76,7 +77,7 @@ const NaverMap = ({
   const createMarkers = (mapInstance) => {
     console.log('네이버맵 마커 생성 시작, devices:', devices);
     const newMarkers = {};
-    
+
     devices.forEach((device) => {
       const marker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(device.latitude, device.longitude),
@@ -124,7 +125,7 @@ const NaverMap = ({
       Object.values(markers).forEach(marker => {
         marker.setMap(null);
       });
-      
+
       // 새 마커 생성
       createMarkers(map);
     }
@@ -135,18 +136,26 @@ const NaverMap = ({
     if (selectedDevice && map) {
       console.log('네이버맵 선택된 장비로 이동:', selectedDevice);
       const newPosition = new window.naver.maps.LatLng(
-        selectedDevice.latitude, 
+        selectedDevice.latitude,
         selectedDevice.longitude
       );
-      
-      // 부드러운 이동 애니메이션으로 해당 위치로 이동
-      map.panTo(newPosition);
-      // 현재 중심 위치 업데이트
+
+      // shouldMaxZoom 값에 따라 줌 레벨 결정 (21이 최대 확대)
+      const zoomLevel = shouldMaxZoom ? 21 : map.getZoom();
+
+      // 지도 이동 및 줌 레벨 설정
+      map.morph(newPosition, zoomLevel, {
+        duration: 800,
+        easing: 'easeOutCubic'
+      });
+
       setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
-      // 로컬 상태도 업데이트
       setLocalSelectedDevice(selectedDevice);
+
+      console.log(`네이버맵 이동 완료 - 줌 레벨: ${zoomLevel}`);
+
     }
-  }, [selectedDevice, map]);
+  }, [selectedDevice, map, shouldMaxZoom]); // 의존성 배열에 shouldMaxZoom 추가
 
   // 지도 크기 재조정 (사이드바 토글 시) - 현재 위치 유지
   useEffect(() => {
@@ -157,7 +166,7 @@ const NaverMap = ({
         map.setCenter(center);
         console.log('네이버맵 리사이즈 후 위치 복원:', currentCenter);
       };
-      
+
       const timer = setTimeout(resizeMap, 300);
       return () => clearTimeout(timer);
     }
@@ -181,7 +190,7 @@ const NaverMap = ({
   return (
     <div className="w-full h-full relative">
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
-      
+
       {/* 선택된 장비 팝업 */}
       {displayDevice && (
         <div

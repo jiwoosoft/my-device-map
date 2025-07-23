@@ -35,13 +35,15 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 
 // 지도 이동을 처리하는 컴포넌트
-function MapFlyTo({ position }) {
+function MapFlyTo({ position, shouldMaxZoom }) {
   const map = useMap();
   useEffect(() => {
     if (position) {
-      map.flyTo(position, 15); // zoom 레벨 15로 부드럽게 이동
+      // shouldMaxZoom이 true이면 18레벨(최대), 아니면 15레벨로 이동
+      const zoomLevel = shouldMaxZoom ? 18 : 15;
+      map.flyTo(position, zoomLevel); // zoom 레벨 설정
     }
-  }, [position, map]);
+  }, [position, map, shouldMaxZoom]);
   return null;
 }
 
@@ -550,7 +552,10 @@ function App() {
                   </Marker>
                 )
               })}
-              <MapFlyTo position={selectedPosition} />
+              <MapFlyTo 
+                position={selectedPosition} 
+                shouldMaxZoom={selectedDevice?.id?.toString().startsWith('temp-')}
+              />
               <MapClickHandler />
             </MapContainer>
           )}
@@ -565,6 +570,7 @@ function App() {
               selectedDevice={selectedDevice}
               editingDevice={editingDevice}
               onMarkerDragEnd={handleMarkerDragEnd}
+              shouldMaxZoom={selectedDevice?.id?.toString().startsWith('temp-')}
             />
           )}
 
@@ -578,6 +584,7 @@ function App() {
               selectedDevice={selectedDevice}
               editingDevice={editingDevice}
               onMarkerDragEnd={handleMarkerDragEnd}
+              shouldMaxZoom={selectedDevice?.id?.toString().startsWith('temp-')}
             />
           )}
         </div>

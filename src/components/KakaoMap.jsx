@@ -11,7 +11,8 @@ const KakaoMap = ({
   onMarkerClick,
   selectedDevice,
   editingDevice,
-  onMarkerDragEnd
+  onMarkerDragEnd,
+  shouldMaxZoom // 추가된 prop
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null); // 지도 인스턴스 저장
@@ -255,29 +256,23 @@ const KakaoMap = ({
           selectedDevice.longitude
         );
         
-        // 현재 줌 레벨 유지하면서 부드러운 이동
-        const currentZoomLevel = mapInstanceRef.current.getLevel();
+        // shouldMaxZoom 값에 따라 줌 레벨 결정 (1이 최대 확대)
+        const zoomLevel = shouldMaxZoom ? 1 : mapInstanceRef.current.getLevel();
         
-        // 카카오맵의 내장 애니메이션 기능 사용 (부드럽고 성능 최적화)
-        mapInstanceRef.current.panTo(newPosition, {
-          animate: {
-            duration: 800, // 애니메이션 지속 시간 (ms)
-            easing: 'easeOutCubic' // 부드러운 감속 효과
-          }
-        });
+        // 지도 이동 및 줌 레벨 설정
+        mapInstanceRef.current.setLevel(zoomLevel);
+        mapInstanceRef.current.panTo(newPosition);
         
-        // 현재 줌 레벨 유지 (레플렛, 네이버맵과 동일한 동작)
         setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
         setLocalSelectedDevice(selectedDevice);
         
-        // 줌 레벨은 변경하지 않고 현재 상태 유지
-        console.log('카카오맵 이동 완료 - 현재 줌 레벨 유지:', currentZoomLevel);
+        console.log(`카카오맵 이동 완료 - 줌 레벨: ${zoomLevel}`);
         
       } catch (error) {
         console.error('장비 선택 이동 중 오류:', error);
       }
     }
-  }, [selectedDevice, isMapInitialized]);
+  }, [selectedDevice, isMapInitialized, shouldMaxZoom]); // 의존성 배열에 shouldMaxZoom 추가
 
   // 지도 크기 재조정 (사이드바 토글 시) - 현재 위치와 줌 레벨 유지
   useEffect(() => {
