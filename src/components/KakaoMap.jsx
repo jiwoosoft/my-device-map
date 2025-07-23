@@ -77,11 +77,18 @@ const KakaoMap = ({
         // 기존 지도 인스턴스 정리
         if (mapInstanceRef.current) {
           try {
-            // 기존 이벤트 리스너 제거
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'click');
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'center_changed');
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'zoom_changed');
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'tilesloaded');
+            // 기존 이벤트 리스너 제거 (안전한 방법)
+            if (window.kakao && window.kakao.maps && window.kakao.maps.event) {
+              if (window.kakao.maps.event.clearListeners) {
+                window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'click');
+                window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'center_changed');
+                window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'zoom_changed');
+                window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'tilesloaded');
+              } else {
+                // clearListeners가 없는 경우 개별 제거
+                console.log('clearListeners 함수가 없어 개별 정리 생략');
+              }
+            }
             mapInstanceRef.current = null;
           } catch (error) {
             console.error('기존 지도 정리 중 오류:', error);
@@ -92,8 +99,10 @@ const KakaoMap = ({
         Object.values(markersRef.current).forEach(marker => {
           if (marker) {
             try {
-              window.kakao.maps.event.clearListeners(marker, 'click');
-              window.kakao.maps.event.clearListeners(marker, 'dragend');
+              if (window.kakao && window.kakao.maps && window.kakao.maps.event && window.kakao.maps.event.clearListeners) {
+                window.kakao.maps.event.clearListeners(marker, 'click');
+                window.kakao.maps.event.clearListeners(marker, 'dragend');
+              }
               marker.setMap(null);
             } catch (error) {
               console.error('마커 정리 중 오류:', error);
@@ -162,8 +171,10 @@ const KakaoMap = ({
             // 기존 마커가 있으면 제거
             if (markersRef.current[device.id]) {
               try {
-                window.kakao.maps.event.clearListeners(markersRef.current[device.id], 'click');
-                window.kakao.maps.event.clearListeners(markersRef.current[device.id], 'dragend');
+                if (window.kakao && window.kakao.maps && window.kakao.maps.event && window.kakao.maps.event.clearListeners) {
+                  window.kakao.maps.event.clearListeners(markersRef.current[device.id], 'click');
+                  window.kakao.maps.event.clearListeners(markersRef.current[device.id], 'dragend');
+                }
                 markersRef.current[device.id].setMap(null);
               } catch (error) {
                 console.error('기존 마커 제거 중 오류:', error);
@@ -296,8 +307,10 @@ const KakaoMap = ({
         Object.values(markersRef.current).forEach(marker => {
           if (marker) {
             try {
-              window.kakao.maps.event.clearListeners(marker, 'click');
-              window.kakao.maps.event.clearListeners(marker, 'dragend');
+              if (window.kakao && window.kakao.maps && window.kakao.maps.event && window.kakao.maps.event.clearListeners) {
+                window.kakao.maps.event.clearListeners(marker, 'click');
+                window.kakao.maps.event.clearListeners(marker, 'dragend');
+              }
               marker.setMap(null);
             } catch (error) {
               console.error('마커 정리 중 오류:', error);
@@ -309,10 +322,12 @@ const KakaoMap = ({
         // 지도 인스턴스 정리
         if (mapInstanceRef.current) {
           try {
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'click');
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'center_changed');
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'zoom_changed');
-            window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'tilesloaded');
+            if (window.kakao && window.kakao.maps && window.kakao.maps.event && window.kakao.maps.event.clearListeners) {
+              window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'click');
+              window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'center_changed');
+              window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'zoom_changed');
+              window.kakao.maps.event.clearListeners(mapInstanceRef.current, 'tilesloaded');
+            }
             mapInstanceRef.current = null;
           } catch (error) {
             console.error('지도 정리 중 오류:', error);
