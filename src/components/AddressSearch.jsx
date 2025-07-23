@@ -66,21 +66,23 @@ const AddressSearch = ({ onLocationSelect }) => {
       if (allResults.length === 0) {
         console.log('프록시 검색 실패, 기존 방식으로 fallback');
         
-        // 1. 카카오 키워드 검색 (장소명, 업체명)
-        const kakaoKeywordResults = await searchKakaoKeyword(query);
-        allResults.push(...kakaoKeywordResults);
+        try {
+          // 1. 카카오 키워드 검색 (장소명, 업체명)
+          const kakaoKeywordResults = await searchKakaoKeyword(query);
+          console.log('카카오 키워드 결과:', kakaoKeywordResults.length);
+          allResults.push(...kakaoKeywordResults);
 
-        // 2. 카카오 주소 검색 (도로명, 지번 주소)
-        const kakaoAddressResults = await searchKakaoAddress(query);
-        allResults.push(...kakaoAddressResults);
+          // 2. 카카오 주소 검색 (도로명, 지번 주소)
+          const kakaoAddressResults = await searchKakaoAddress(query);
+          console.log('카카오 주소 결과:', kakaoAddressResults.length);
+          allResults.push(...kakaoAddressResults);
 
-        // 3. 카카오 카테고리 검색 (업종별 검색)
-        const kakaoCategoryResults = await searchKakaoCategory(query);
-        allResults.push(...kakaoCategoryResults);
+          // 3. 더 다양한 카카오 검색 (여러 방법으로 시도)
+          await searchKakaoMultiple(query, allResults);
 
-        // 4. 네이버 주소 검색 (보조 검색)
-        const naverResults = await searchNaverAddress(query);
-        allResults.push(...naverResults);
+        } catch (fallbackError) {
+          console.error('Fallback 검색 오류:', fallbackError);
+        }
       }
 
       // 중복 제거 및 정렬
@@ -115,6 +117,64 @@ const AddressSearch = ({ onLocationSelect }) => {
       setShowResults(true);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 카카오 통합 검색 (여러 방법으로 시도)
+  const searchKakaoMultiple = async (query, allResults) => {
+    const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
+    
+    try {
+      // 방법 1: 키워드 + 주소 통합 검색
+      const response1 = await fetch(
+        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query + ' 주소')}&size=15`,
+        {
+          headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+        }
+      );
+      
+      if (response1.ok) {
+        const data1 = await response1.json();
+        const results1 = (data1.documents || []).map(item => ({
+          id: `multi1_${item.id}`,
+          place_name: item.place_name,
+          address_name: item.address_name,
+          road_address_name: item.road_address_name,
+          x: item.x,
+          y: item.y,
+          source: 'kakao',
+          searchType: 'multi1'
+        }));
+        allResults.push(...results1);
+        console.log('카카오 통합검색1 결과:', results1.length);
+      }
+
+      // 방법 2: 지역 검색
+      const response2 = await fetch(
+        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&category_group_code=&size=15`,
+        {
+          headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+        }
+      );
+      
+      if (response2.ok) {
+        const data2 = await response2.json();
+        const results2 = (data2.documents || []).map(item => ({
+          id: `multi2_${item.id}`,
+          place_name: item.place_name,
+          address_name: item.address_name,
+          road_address_name: item.road_address_name,
+          x: item.x,
+          y: item.y,
+          source: 'kakao',
+          searchType: 'multi2'
+        }));
+        allResults.push(...results2);
+        console.log('카카오 통합검색2 결과:', results2.length);
+      }
+
+    } catch (error) {
+      console.error('카카오 통합 검색 오류:', error);
     }
   };
 
