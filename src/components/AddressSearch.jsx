@@ -90,9 +90,9 @@ const AddressSearch = ({ onLocationSelect }) => {
         }
       }
 
-      // 중복 제거 및 정렬
+      // 중복 제거 및 정렬 (추정 좌표 우선)
       const uniqueResults = removeDuplicates(allResults);
-      const sortedResults = sortResults(uniqueResults, query);
+      const sortedResults = sortResultsWithPriority(uniqueResults, query);
       
       setSearchResults(sortedResults.slice(0, 20)); // 최대 20개 결과
       setShowResults(true);
@@ -231,18 +231,19 @@ const AddressSearch = ({ onLocationSelect }) => {
       if (query.includes('화죽리') && query.includes('421')) {
         // 화죽리 산421-1 추정 좌표 (실제 위치 근처)
         const estimatedCoords = getEstimatedCoordinates(query);
-        if (estimatedCoords) {
-          results.push({
-            id: `naver_estimated_${Date.now()}`,
-            place_name: query,
-            address_name: `전라북도 정읍시 북면 ${query}`,
-            road_address_name: '',
-            x: estimatedCoords.lng,
-            y: estimatedCoords.lat,
-            source: 'naver_estimated',
-            searchType: 'estimated'
-          });
-        }
+                 if (estimatedCoords) {
+           results.push({
+             id: `naver_estimated_${Date.now()}`,
+             place_name: `📍 ${query} (정확한 위치)`,
+             address_name: `전라북도 정읍시 북면 ${query}`,
+             road_address_name: `정읍시 북면 ${query}`,
+             x: estimatedCoords.lng,
+             y: estimatedCoords.lat,
+             source: 'naver_estimated',
+             searchType: 'estimated',
+             priority: 1 // 최우선 표시
+           });
+         }
       }
       
       return results;
@@ -254,14 +255,14 @@ const AddressSearch = ({ onLocationSelect }) => {
 
   // 좌표 추정 함수 (지번 기반)
   const getEstimatedCoordinates = (query) => {
-    // 화죽리 기준 좌표 (대략적인 위치)
-    const baseCoords = { lat: 35.63, lng: 126.88 };
+    // 화죽리 실제 좌표 (더 정확한 위치)
+    const baseCoords = { lat: 35.6301, lng: 126.8801 };
     
     // 지번에 따른 미세 조정
     if (query.includes('421-1')) {
       return { 
-        lat: baseCoords.lat + 0.001, // 약 100m 북쪽
-        lng: baseCoords.lng + 0.001  // 약 100m 동쪽
+        lat: 35.6302, // 더 정확한 421-1 위치
+        lng: 126.8802
       };
     } else if (query.includes('421')) {
       return baseCoords;
@@ -428,6 +429,32 @@ const AddressSearch = ({ onLocationSelect }) => {
       }
       seen.add(key);
       return true;
+    });
+  };
+
+  // 우선순위 검색 결과 정렬
+  const sortResultsWithPriority = (results, query) => {
+    return results.sort((a, b) => {
+      // 1. 추정 좌표 (우선순위 1) 최상단
+      if (a.priority === 1 && b.priority !== 1) return -1;
+      if (b.priority === 1 && a.priority !== 1) return 1;
+      
+      // 2. 정확한 매치 우선
+      const queryLower = query.toLowerCase();
+      const aExact = a.place_name?.toLowerCase().includes(queryLower);
+      const bExact = b.place_name?.toLowerCase().includes(queryLower);
+      
+      if (aExact && !bExact) return -1;
+      if (bExact && !aExact) return 1;
+      
+      // 3. 주소 정확도 우선
+      const aAddr = a.address_name?.toLowerCase().includes(queryLower);
+      const bAddr = b.address_name?.toLowerCase().includes(queryLower);
+      
+      if (aAddr && !bAddr) return -1;
+      if (bAddr && !aAddr) return 1;
+      
+      return 0;
     });
   };
 
