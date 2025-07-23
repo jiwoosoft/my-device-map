@@ -510,12 +510,14 @@ function App() {
               <ZoomControl position="topright" />
               {mapViewType === 'satellite' ? (
                 <TileLayer
+                  key="satellite"
                   url="https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"
                   subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
                   attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
                 />
               ) : (
                 <TileLayer
+                  key="normal"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
