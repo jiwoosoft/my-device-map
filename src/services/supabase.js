@@ -48,6 +48,10 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       return { success: false, error: 'devices 테이블이 존재하지 않습니다.' };
     }
 
+    // 디버깅: 업로드할 장비 데이터 확인
+    console.log('업로드할 장비 데이터:', devices);
+    console.log('장비 개수:', devices.length);
+
     // 기존 데이터 삭제 후 새 데이터 삽입
     const { error: deleteError } = await supabase
       .from('devices')
@@ -68,6 +72,8 @@ export const saveDevicesToCloud = async (devices, folders = []) => {
       console.error('데이터 삽입 오류:', insertError);
       return { success: false, error: insertError };
     }
+    
+    console.log('장비 데이터 업로드 성공:', devices.length, '개');
 
     // 폴더 데이터 저장 (스키마 문제 해결됨)
     if (folders && folders.length > 0) {
@@ -172,7 +178,10 @@ export const loadDevicesFromCloud = async () => {
       folderid: device.folderid || 'default'
     }));
 
+    // 디버깅: 데이터 확인
     console.log('클라우드 데이터 로드 성공:', processedDevices.length, '개 장비,', folders.length, '개 폴더');
+    console.log('로드된 장비 데이터:', processedDevices);
+    console.log('로드된 폴더 데이터:', folders);
     return { 
       success: true, 
       data: processedDevices,
