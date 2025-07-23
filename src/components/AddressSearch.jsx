@@ -125,52 +125,87 @@ const AddressSearch = ({ onLocationSelect }) => {
     const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY || 'afc269fb7c40333dfbdf3b171aeb6c1d';
     
     try {
-      // 방법 1: 키워드 + 주소 통합 검색
-      const response1 = await fetch(
-        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query + ' 주소')}&size=15`,
-        {
-          headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+      // 방법 1: 정확한 주소 검색 (지번 포함)
+      const addressVariations = [
+        query, // 원본 검색어
+        query.replace(/\s+/g, ''), // 공백 제거
+        query + ' 번지', // 번지 추가
+        query + ' 지번', // 지번 추가
+        `전라북도 정읍시 ${query}`, // 전체 주소
+        `정읍시 ${query}`, // 시 포함
+      ];
+
+      for (const addressQuery of addressVariations) {
+        try {
+          const response = await fetch(
+            `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(addressQuery)}&size=10`,
+            {
+              headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const results = (data.documents || []).map(item => ({
+              id: `addr_precise_${item.address?.b_code || Math.random()}`,
+              place_name: item.address_name || item.address?.address_name,
+              address_name: item.address_name || item.address?.address_name,
+              road_address_name: item.road_address?.address_name,
+              x: item.x || item.address?.x,
+              y: item.y || item.address?.y,
+              source: 'kakao',
+              searchType: 'precise_address'
+            }));
+            
+            if (results.length > 0) {
+              allResults.push(...results);
+              console.log(`정확한 주소 검색 (${addressQuery}) 결과:`, results.length);
+            }
+          }
+        } catch (error) {
+          console.warn(`주소 검색 실패 (${addressQuery}):`, error);
         }
-      );
-      
-      if (response1.ok) {
-        const data1 = await response1.json();
-        const results1 = (data1.documents || []).map(item => ({
-          id: `multi1_${item.id}`,
-          place_name: item.place_name,
-          address_name: item.address_name,
-          road_address_name: item.road_address_name,
-          x: item.x,
-          y: item.y,
-          source: 'kakao',
-          searchType: 'multi1'
-        }));
-        allResults.push(...results1);
-        console.log('카카오 통합검색1 결과:', results1.length);
       }
 
-      // 방법 2: 지역 검색
-      const response2 = await fetch(
-        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&category_group_code=&size=15`,
-        {
-          headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+      // 방법 2: 키워드 검색 (다양한 변형)
+      const keywordVariations = [
+        query,
+        query + ' 주소',
+        query + ' 위치',
+        `정읍 ${query}`,
+        `정읍시 ${query}`,
+      ];
+
+      for (const keywordQuery of keywordVariations) {
+        try {
+          const response = await fetch(
+            `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(keywordQuery)}&size=15`,
+            {
+              headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const results = (data.documents || []).map(item => ({
+              id: `keyword_var_${item.id}`,
+              place_name: item.place_name,
+              address_name: item.address_name,
+              road_address_name: item.road_address_name,
+              x: item.x,
+              y: item.y,
+              source: 'kakao',
+              searchType: 'keyword_variation'
+            }));
+            
+            if (results.length > 0) {
+              allResults.push(...results);
+              console.log(`키워드 변형 검색 (${keywordQuery}) 결과:`, results.length);
+            }
+          }
+        } catch (error) {
+          console.warn(`키워드 검색 실패 (${keywordQuery}):`, error);
         }
-      );
-      
-      if (response2.ok) {
-        const data2 = await response2.json();
-        const results2 = (data2.documents || []).map(item => ({
-          id: `multi2_${item.id}`,
-          place_name: item.place_name,
-          address_name: item.address_name,
-          road_address_name: item.road_address_name,
-          x: item.x,
-          y: item.y,
-          source: 'kakao',
-          searchType: 'multi2'
-        }));
-        allResults.push(...results2);
-        console.log('카카오 통합검색2 결과:', results2.length);
       }
 
     } catch (error) {
