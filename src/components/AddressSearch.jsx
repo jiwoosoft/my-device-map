@@ -8,7 +8,7 @@ const AddressSearch = ({ onLocationSelect }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // 통합 주소 검색 API 호출 (Netlify Functions 프록시 사용)
+  // 통합 주소 검색 API 호출 (카카오 + 네이버)
   const searchAddress = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -20,79 +20,25 @@ const AddressSearch = ({ onLocationSelect }) => {
     const allResults = [];
 
     try {
-      // 1. 카카오 검색 (Netlify Functions 프록시)
-      try {
-        const kakaoResponse = await fetch(`/.netlify/functions/search-address?provider=kakao&query=${encodeURIComponent(query)}`);
-        if (kakaoResponse.ok) {
-          const kakaoData = await kakaoResponse.json();
-          if (kakaoData.success && kakaoData.results) {
-            allResults.push(...kakaoData.results.map(item => ({
-              id: `kakao_${item.x}_${item.y}`,
-              title: item.title,
-              address: item.address,
-              roadAddress: item.roadAddress,
-              latitude: item.y,
-              longitude: item.x,
-              provider: 'kakao'
-            })));
-          }
-        }
-      } catch (error) {
-        console.warn('카카오 검색 실패:', error);
-      }
+      // 1. 카카오 키워드 검색 (장소명, 업체명)
+      const kakaoKeywordResults = await searchKakaoKeyword(query);
+      allResults.push(...kakaoKeywordResults);
 
-      // 2. 네이버 검색 (Netlify Functions 프록시)
-      try {
-        const naverResponse = await fetch(`/.netlify/functions/search-address?provider=naver&query=${encodeURIComponent(query)}`);
-        if (naverResponse.ok) {
-          const naverData = await naverResponse.json();
-          if (naverData.success && naverData.results) {
-            allResults.push(...naverData.results.map(item => ({
-              id: `naver_${item.x}_${item.y}`,
-              title: item.title,
-              address: item.address,
-              roadAddress: item.roadAddress,
-              latitude: item.y,
-              longitude: item.x,
-              provider: 'naver'
-            })));
-          }
-        }
-      } catch (error) {
-        console.warn('네이버 검색 실패:', error);
-      }
+      // 2. 카카오 주소 검색 (도로명, 지번 주소)
+      const kakaoAddressResults = await searchKakaoAddress(query);
+      allResults.push(...kakaoAddressResults);
 
-      // 프록시가 실패했을 경우 기존 방식으로 fallback
-      if (allResults.length === 0) {
-        console.log('프록시 검색 실패, 기존 방식으로 fallback');
-        
-        try {
-          // 1. 카카오 키워드 검색 (장소명, 업체명)
-          const kakaoKeywordResults = await searchKakaoKeyword(query);
-          console.log('카카오 키워드 결과:', kakaoKeywordResults.length);
-          allResults.push(...kakaoKeywordResults);
+      // 3. 카카오 카테고리 검색 (업종별 검색)
+      const kakaoCategoryResults = await searchKakaoCategory(query);
+      allResults.push(...kakaoCategoryResults);
 
-          // 2. 카카오 주소 검색 (도로명, 지번 주소)
-          const kakaoAddressResults = await searchKakaoAddress(query);
-          console.log('카카오 주소 결과:', kakaoAddressResults.length);
-          allResults.push(...kakaoAddressResults);
+      // 4. 네이버 주소 검색 (보조 검색)
+      const naverResults = await searchNaverAddress(query);
+      allResults.push(...naverResults);
 
-          // 3. 더 다양한 카카오 검색 (여러 방법으로 시도)
-          await searchKakaoMultiple(query, allResults);
-
-          // 4. 네이버 지역 검색 (카카오에 없는 주소 보완)
-          const naverResults = await searchNaverLocal(query);
-          console.log('네이버 지역 검색 결과:', naverResults.length);
-          allResults.push(...naverResults);
-
-        } catch (fallbackError) {
-          console.error('Fallback 검색 오류:', fallbackError);
-        }
-      }
-
-      // 중복 제거 및 정렬 (추정 좌표 우선)
+      // 중복 제거 및 정렬
       const uniqueResults = removeDuplicates(allResults);
-      const sortedResults = sortResultsWithPriority(uniqueResults, query);
+      const sortedResults = sortResults(uniqueResults, query);
       
       setSearchResults(sortedResults.slice(0, 20)); // 최대 20개 결과
       setShowResults(true);
@@ -216,59 +162,6 @@ const AddressSearch = ({ onLocationSelect }) => {
     } catch (error) {
       console.error('카카오 통합 검색 오류:', error);
     }
-  };
-
-  // 네이버 지역 검색 (카카오 보완용)
-  const searchNaverLocal = async (query) => {
-    try {
-      const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID || 'kqcolemxuh';
-      
-      // 네이버는 CORS 문제로 직접 호출 불가하지만, 더미 데이터로 대체
-      // 실제로는 검색어 분석해서 좌표 추정
-      const results = [];
-      
-      // 지번 주소 패턴 분석
-      if (query.includes('화죽리') && query.includes('421')) {
-        // 화죽리 산421-1 추정 좌표 (실제 위치 근처)
-        const estimatedCoords = getEstimatedCoordinates(query);
-                 if (estimatedCoords) {
-           results.push({
-             id: `naver_estimated_${Date.now()}`,
-             place_name: `📍 ${query} (정확한 위치)`,
-             address_name: `전라북도 정읍시 북면 ${query}`,
-             road_address_name: `정읍시 북면 ${query}`,
-             x: estimatedCoords.lng,
-             y: estimatedCoords.lat,
-             source: 'naver_estimated',
-             searchType: 'estimated',
-             priority: 1 // 최우선 표시
-           });
-         }
-      }
-      
-      return results;
-    } catch (error) {
-      console.error('네이버 지역 검색 오류:', error);
-      return [];
-    }
-  };
-
-  // 좌표 추정 함수 (지번 기반)
-  const getEstimatedCoordinates = (query) => {
-    // 화죽리 실제 좌표 (더 정확한 위치)
-    const baseCoords = { lat: 35.6301, lng: 126.8801 };
-    
-    // 지번에 따른 미세 조정
-    if (query.includes('421-1')) {
-      return { 
-        lat: 35.6302, // 더 정확한 421-1 위치
-        lng: 126.8802
-      };
-    } else if (query.includes('421')) {
-      return baseCoords;
-    }
-    
-    return null;
   };
 
   // 카카오 키워드 검색
@@ -429,32 +322,6 @@ const AddressSearch = ({ onLocationSelect }) => {
       }
       seen.add(key);
       return true;
-    });
-  };
-
-  // 우선순위 검색 결과 정렬
-  const sortResultsWithPriority = (results, query) => {
-    return results.sort((a, b) => {
-      // 1. 추정 좌표 (우선순위 1) 최상단
-      if (a.priority === 1 && b.priority !== 1) return -1;
-      if (b.priority === 1 && a.priority !== 1) return 1;
-      
-      // 2. 정확한 매치 우선
-      const queryLower = query.toLowerCase();
-      const aExact = a.place_name?.toLowerCase().includes(queryLower);
-      const bExact = b.place_name?.toLowerCase().includes(queryLower);
-      
-      if (aExact && !bExact) return -1;
-      if (bExact && !aExact) return 1;
-      
-      // 3. 주소 정확도 우선
-      const aAddr = a.address_name?.toLowerCase().includes(queryLower);
-      const bAddr = b.address_name?.toLowerCase().includes(queryLower);
-      
-      if (aAddr && !bAddr) return -1;
-      if (bAddr && !aAddr) return 1;
-      
-      return 0;
     });
   };
 
