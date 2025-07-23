@@ -308,10 +308,19 @@ function App() {
 
   // 주소 검색으로 위치 선택 핸들러
   const handleLocationSelect = (location) => {
-    setSearchLocation(location);
+    // 1. 지도 이동을 위해 상태 업데이트
+    setSelectedDevice({
+      ...location,
+      id: `temp-${Date.now()}`, // 임시 ID 부여
+    });
+    
+    // 2. 새 장비 등록을 위해 위치 설정
     setNewDevicePosition({ lat: location.latitude, lng: location.longitude });
+    
+    // 3. 장비 등록 모달 열기
     setIsModalOpen(true);
-    toast.success(`${location.name} 위치가 선택되었습니다.`);
+    
+    toast.success(`${location.name} 위치로 이동합니다.`);
   };
 
   // 마커 클릭 핸들러 (새로운 지도용)
