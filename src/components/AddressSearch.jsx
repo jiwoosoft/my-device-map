@@ -62,6 +62,27 @@ const AddressSearch = ({ onLocationSelect }) => {
         console.warn('네이버 검색 실패:', error);
       }
 
+      // 프록시가 실패했을 경우 기존 방식으로 fallback
+      if (allResults.length === 0) {
+        console.log('프록시 검색 실패, 기존 방식으로 fallback');
+        
+        // 1. 카카오 키워드 검색 (장소명, 업체명)
+        const kakaoKeywordResults = await searchKakaoKeyword(query);
+        allResults.push(...kakaoKeywordResults);
+
+        // 2. 카카오 주소 검색 (도로명, 지번 주소)
+        const kakaoAddressResults = await searchKakaoAddress(query);
+        allResults.push(...kakaoAddressResults);
+
+        // 3. 카카오 카테고리 검색 (업종별 검색)
+        const kakaoCategoryResults = await searchKakaoCategory(query);
+        allResults.push(...kakaoCategoryResults);
+
+        // 4. 네이버 주소 검색 (보조 검색)
+        const naverResults = await searchNaverAddress(query);
+        allResults.push(...naverResults);
+      }
+
       // 중복 제거 및 정렬
       const uniqueResults = removeDuplicates(allResults);
       const sortedResults = sortResults(uniqueResults, query);
