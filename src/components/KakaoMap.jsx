@@ -265,16 +265,22 @@ const KakaoMap = ({
         mapInstanceRef.current.setLevel(zoomLevel);
         mapInstanceRef.current.panTo(newPosition);
         
+        // 이동 후에도 현재 뷰 타입(위성/일반)을 유지하도록 재설정
+        const mapTypeId = mapViewType === 'satellite' 
+          ? window.kakao.maps.MapTypeId.HYBRID 
+          : window.kakao.maps.MapTypeId.ROADMAP;
+        mapInstanceRef.current.setMapTypeId(mapTypeId);
+
         setCurrentCenter([selectedDevice.latitude, selectedDevice.longitude]);
         setLocalSelectedDevice(selectedDevice);
         
-        console.log(`카카오맵 이동 완료 - 줌 레벨: ${zoomLevel}`);
+        console.log(`카카오맵 이동 완료 - 줌 레벨: ${zoomLevel}, 뷰: ${mapViewType}`);
         
       } catch (error) {
         console.error('장비 선택 이동 중 오류:', error);
       }
     }
-  }, [selectedDevice, isMapInitialized, shouldMaxZoom]); // 의존성 배열에 shouldMaxZoom 추가
+  }, [selectedDevice, isMapInitialized, shouldMaxZoom, mapViewType]); // mapViewType 의존성 추가
 
   // 지도 크기 재조정 (사이드바 토글 시) - 현재 위치와 줌 레벨 유지
   useEffect(() => {
