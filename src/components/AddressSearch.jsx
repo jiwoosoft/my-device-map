@@ -8,7 +8,7 @@ const AddressSearch = ({ onLocationSelect }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // 통합 주소 검색 API 호출 (카카오 + 네이버)
+  // 통합 주소 검색 API 호출 (Netlify Functions 프록시 사용)
   const searchAddress = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -20,21 +20,47 @@ const AddressSearch = ({ onLocationSelect }) => {
     const allResults = [];
 
     try {
-      // 1. 카카오 키워드 검색 (장소명, 업체명)
-      const kakaoKeywordResults = await searchKakaoKeyword(query);
-      allResults.push(...kakaoKeywordResults);
+      // 1. 카카오 검색 (Netlify Functions 프록시)
+      try {
+        const kakaoResponse = await fetch(`/.netlify/functions/search-address?provider=kakao&query=${encodeURIComponent(query)}`);
+        if (kakaoResponse.ok) {
+          const kakaoData = await kakaoResponse.json();
+          if (kakaoData.success && kakaoData.results) {
+            allResults.push(...kakaoData.results.map(item => ({
+              id: `kakao_${item.x}_${item.y}`,
+              title: item.title,
+              address: item.address,
+              roadAddress: item.roadAddress,
+              latitude: item.y,
+              longitude: item.x,
+              provider: 'kakao'
+            })));
+          }
+        }
+      } catch (error) {
+        console.warn('카카오 검색 실패:', error);
+      }
 
-      // 2. 카카오 주소 검색 (도로명, 지번 주소)
-      const kakaoAddressResults = await searchKakaoAddress(query);
-      allResults.push(...kakaoAddressResults);
-
-      // 3. 카카오 카테고리 검색 (업종별 검색)
-      const kakaoCategoryResults = await searchKakaoCategory(query);
-      allResults.push(...kakaoCategoryResults);
-
-      // 4. 네이버 주소 검색 (보조 검색)
-      const naverResults = await searchNaverAddress(query);
-      allResults.push(...naverResults);
+      // 2. 네이버 검색 (Netlify Functions 프록시)
+      try {
+        const naverResponse = await fetch(`/.netlify/functions/search-address?provider=naver&query=${encodeURIComponent(query)}`);
+        if (naverResponse.ok) {
+          const naverData = await naverResponse.json();
+          if (naverData.success && naverData.results) {
+            allResults.push(...naverData.results.map(item => ({
+              id: `naver_${item.x}_${item.y}`,
+              title: item.title,
+              address: item.address,
+              roadAddress: item.roadAddress,
+              latitude: item.y,
+              longitude: item.x,
+              provider: 'naver'
+            })));
+          }
+        }
+      } catch (error) {
+        console.warn('네이버 검색 실패:', error);
+      }
 
       // 중복 제거 및 정렬
       const uniqueResults = removeDuplicates(allResults);
